@@ -75,6 +75,9 @@ impl ParsedReading {
 pub fn derive_ow_id(client_id: &str, topic: &str) -> String {
     if client_id.starts_with("P1M5_") {
         client_id.to_string()
+    } else if client_id.len() == 8 && client_id.starts_with("P1") {
+        // v1.0.47+ format: P1855EA8
+        format!("p1m5_{}", client_id)
     } else if client_id.starts_with("ow_") {
         client_id.to_string()
     } else if topic.starts_with("P1M5/") {
@@ -104,7 +107,20 @@ pub fn parse_telemetry(packet: &TelemetryPacket) -> Result<ParsedReading, String
         let text = String::from_utf8_lossy(&packet.payload).to_string();
 
         if topic.starts_with("P1M5/") {
-            p1m5::parse_dsmr(&text, &packet.ow_id, now)
+            // v1.0.47+ firmware sends JSON, older firmware sends raw DSMR.
+            if p1m5::is_json(&packet.payload) {
+                let json: serde_json::Value =
+                    serde_json::from_slice(&packet.payload).map_err(|e| format!("JSON: {e}"))?;
+                if topic.contains("/data/") {
+                    p1m5::parse_json_data(&json, &packet.ow_id, now)
+                } else if topic.contains("/sys/") {
+                    p1m5::parse_json_config(&json, &packet.ow_id, now)
+                } else {
+                    p1m5::parse_dsmr(&text, &packet.ow_id, now)
+                }
+            } else {
+                p1m5::parse_dsmr(&text, &packet.ow_id, now)
+            }
         } else if topic.starts_with("BEPR/") {
             smart_stuff::parse_json(&text, &packet.ow_id, now)
         } else {
