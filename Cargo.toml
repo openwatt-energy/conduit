@@ -1,0 +1,31 @@
+[package]
+name = "conduitd"
+version = "0.1.0"
+edition = "2021"
+description = "Conduit — OpenWatt MQTT ingestion server. Auth, telemetry parse, direct InfluxDB v2 writes, command downlink."
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+tokio-rustls = "0.26"
+rustls = "0.23"
+rustls-pemfile = "2"
+axum = "0.7"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+base64 = "0.22"
+sha2 = "0.10"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+bytes = "1"
+chrono = { version = "0.4", features = ["serde"] }
+thiserror = "2"
+async-trait = "0.1"
+
+[[bin]]
+name = "conduit-emulators"
+path = "src/bin/emulators.rs"
+
+[[bin]]
+name = "conduit-influx-mock"
+path = "src/bin/influx-mock.rs"

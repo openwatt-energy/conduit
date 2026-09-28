@@ -1,0 +1,39 @@
+steps:
+- name: 'REDACTED_REGISTRY/cloud-builders/docker'
+  args:
+  - 'build'
+  - '-t'
+  - 'REDACTED_REGISTRY/$PROJECT_ID/conduit/conduitd:$COMMIT_SHA'
+  - '-t'
+  - 'REDACTED_REGISTRY/$PROJECT_ID/conduit/conduitd:latest'
+  - '-f'
+  - 'docker/Dockerfile'
+  - '.'
+
+- name: 'REDACTED_REGISTRY/cloud-builders/docker'
+  args: ['push', 'REDACTED_REGISTRY/$PROJECT_ID/conduit/conduitd:$COMMIT_SHA']
+
+- name: 'REDACTED_REGISTRY/cloud-builders/docker'
+  args: ['push', 'REDACTED_REGISTRY/$PROJECT_ID/conduit/conduitd:latest']
+
+- name: 'REDACTED_REGISTRY/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'gcloud'
+  args:
+  - 'compute'
+  - 'instances'
+  - 'update-container'
+  - 'conduit'
+  - '--zone'
+  - '${_GCE_ZONE}'
+  - '--container-image'
+  - 'REDACTED_REGISTRY/$PROJECT_ID/conduit/conduitd:$COMMIT_SHA'
+
+images:
+- 'REDACTED_REGISTRY/$PROJECT_ID/conduit/conduitd:$COMMIT_SHA'
+- 'REDACTED_REGISTRY/$PROJECT_ID/conduit/conduitd:latest'
+
+substitutions:
+  _GCE_ZONE: 'europe-west1-b'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
