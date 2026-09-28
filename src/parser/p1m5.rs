@@ -1,5 +1,6 @@
 use super::{FieldValue, ParsedReading};
 
+/// Parse a DSMR-format telegram (raw OBIS lines).
 pub fn parse_dsmr(text: &str, ow_id: &str, timestamp_ns: i64) -> Result<ParsedReading, String> {
     let mut fields = Vec::new();
     let mut sn = String::new();
@@ -32,6 +33,144 @@ pub fn parse_dsmr(text: &str, ow_id: &str, timestamp_ns: i64) -> Result<ParsedRe
         fields,
         timestamp_ns,
     })
+}
+
+/// Parse v1.0.47+ JSON telemetry payload (data/readings topic).
+pub fn parse_json_data(
+    json: &serde_json::Value,
+    ow_id: &str,
+    timestamp_ns: i64,
+) -> Result<ParsedReading, String> {
+    let mut fields = Vec::new();
+    let mut sn = String::new();
+
+    // Try to extract serial/equipment ID
+    if let Some(eq) = json.get("0-0:96.1.1") {
+        sn = eq.as_str().unwrap_or("").to_string();
+    }
+
+    // Map OBIS-like keys to field names
+    let mappings: &[(&str, &str)] = &[
+        ("1-0:32.7.0", "v_l1"),
+        ("1-0:52.7.0", "v_l2"),
+        ("1-0:72.7.0", "v_l3"),
+        ("1-0:1.7.0", "w_delivered"),
+        ("1-0:2.7.0", "w_received"),
+        ("1-0:31.7.0", "a_l1"),
+        ("1-0:51.7.0", "a_l2"),
+        ("1-0:71.7.0", "a_l3"),
+        ("1-0:1.8.1", "e_delivered_t1"),
+        ("1-0:1.8.2", "e_delivered_t2"),
+        ("1-0:2.8.1", "e_received_t1"),
+        ("1-0:2.8.2", "e_received_t2"),
+        ("1-0:21.7.0", "w_import_l1"),
+        ("1-0:41.7.0", "w_import_l2"),
+        ("1-0:61.7.0", "w_import_l3"),
+        ("1-0:22.7.0", "w_export_l1"),
+        ("1-0:42.7.0", "w_export_l2"),
+        ("1-0:62.7.0", "w_export_l3"),
+    ];
+
+    for (obis, field_name) in mappings {
+        if let Some(obj) = json.get(*obis) {
+            let value = extract_value(obj);
+            if let Some(v) = value {
+                fields.push((field_name.to_string(), v));
+            }
+        }
+    }
+
+    // Also extract gas (sent under "0-1:24.2.1" in JSON)
+    if let Some(obj) = json.get("0-1:24.2.1") {
+        if let Some(v) = extract_value(obj) {
+            fields.push(("gas_m3".to_string(), v));
+        }
+    }
+
+    // Tariff
+    if let Some(t) = json.get("0-0:96.14.0") {
+        let val = t.as_str().unwrap_or("").parse::<i64>().unwrap_or(0);
+        fields.push(("tariff".to_string(), FieldValue::Integer(val)));
+    }
+
+    if fields.is_empty() {
+        return Err("no valid fields in v1.0.47 JSON".to_string());
+    }
+
+    Ok(ParsedReading {
+        ow_id: ow_id.to_string(),
+        device_type: "p1m5".to_string(),
+        sn_or_mac: sn,
+        fields,
+        timestamp_ns,
+    })
+}
+
+/// Parse v1.0.47+ sys/config telemetry.
+pub fn parse_json_config(
+    json: &serde_json::Value,
+    ow_id: &str,
+    timestamp_ns: i64,
+) -> Result<ParsedReading, String> {
+    let mut fields = Vec::new();
+
+    if let Some(fw) = json.get("fw_ver").and_then(|v| v.as_str()) {
+        fields.push(("fw_version".to_string(), FieldValue::String(fw.to_string())));
+    }
+    if let Some(uptime) = json.get("uptime").and_then(|v| v.as_i64()) {
+        fields.push(("uptime".to_string(), FieldValue::Integer(uptime)));
+    }
+    if let Some(reboots) = json.get("reboots").and_then(|v| v.as_i64()) {
+        fields.push(("reboots".to_string(), FieldValue::Integer(reboots)));
+    }
+    if let Some(rssi) = json.get("wifi_rssi").and_then(|v| v.as_i64()) {
+        fields.push(("wifi_rssi".to_string(), FieldValue::Integer(rssi)));
+    }
+    if let Some(ssid) = json.get("wifi_ssid").and_then(|v| v.as_str()) {
+        fields.push(("wifi_ssid".to_string(), FieldValue::String(ssid.to_string())));
+    }
+    if let Some(ip) = json.get("dongle_ip").and_then(|v| v.as_str()) {
+        fields.push(("dongle_ip".to_string(), FieldValue::String(ip.to_string())));
+    }
+
+    Ok(ParsedReading {
+        ow_id: ow_id.to_string(),
+        device_type: "p1m5".to_string(),
+        sn_or_mac: String::new(),
+        fields,
+        timestamp_ns,
+    })
+}
+
+/// Extract a numeric value from a v1.0.47 JSON object like {"value": 230.0, "unit": "V"}.
+fn extract_value(obj: &serde_json::Value) -> Option<FieldValue> {
+    if let Some(v) = obj.get("value") {
+        if let Some(n) = v.as_f64() {
+            // Convert kW to W for power fields
+            return Some(FieldValue::Float(n));
+        }
+        if let Some(n) = v.as_i64() {
+            return Some(FieldValue::Integer(n));
+        }
+        if let Some(s) = v.as_str() {
+            if let Ok(n) = s.parse::<f64>() {
+                return Some(FieldValue::Float(n));
+            }
+            return Some(FieldValue::String(s.to_string()));
+        }
+    }
+    // Flattened scalar values
+    if let Some(n) = obj.as_f64() {
+        return Some(FieldValue::Float(n));
+    }
+    if let Some(n) = obj.as_i64() {
+        return Some(FieldValue::Integer(n));
+    }
+    None
+}
+
+pub fn is_json(payload: &[u8]) -> bool {
+    payload.first() == Some(&b'{')
 }
 
 fn parse_obis_line(line: &str) -> Option<(String, String)> {

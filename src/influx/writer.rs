@@ -22,7 +22,10 @@ impl InfluxWriter {
 
         tokio::spawn(async move {
             let mut buffer: Vec<ParsedReading> = Vec::with_capacity(config.batch_size);
-            let client = reqwest::Client::new();
+            let client = reqwest::Client::builder()
+                .danger_accept_invalid_certs(true)
+                .build()
+                .expect("failed to build InfluxDB client");
             let write_url = format!(
                 "{}/api/v2/write?org={}&bucket={}&precision=ns",
                 config.url.trim_end_matches('/'),
