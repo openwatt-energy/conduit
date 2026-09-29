@@ -101,7 +101,7 @@ async fn flush(
 
     let mut body = String::with_capacity(buffer.len() * 128);
     for r in buffer.iter() {
-        body.push_str(&r.to_line_protocol("readings"));
+        body.push_str(&r.to_line_protocol("p1_dongles"));
         body.push('\n');
     }
 

@@ -162,8 +162,8 @@ async fn handle_connection(
                     continue;
                 }
 
-                if publish.topic.contains("/data") {
-                    let ow_id = crate::parser::derive_ow_id(&device_id, &publish.topic);
+                if publish.topic.contains("/data") || publish.topic.contains("/sys") {
+                    let ow_id = auth.resolve_ow_id(&device_id);
                     let _text = String::from_utf8_lossy(&publish.payload).to_string();
                     match crate::parser::parse_telemetry(&TelemetryPacket { ow_id, topic: publish.topic, payload: publish.payload }) {
                         Ok(reading) => {

@@ -28,7 +28,7 @@ pub fn parse_dsmr(text: &str, ow_id: &str, timestamp_ns: i64) -> Result<ParsedRe
 
     Ok(ParsedReading {
         ow_id: ow_id.to_string(),
-        device_type: "p1m5".to_string(),
+        device_type: String::new(),
         sn_or_mac: sn,
         fields,
         timestamp_ns,
@@ -89,8 +89,8 @@ pub fn parse_json_data(
 
     // Tariff
     if let Some(t) = json.get("0-0:96.14.0") {
-        let val = t.as_str().unwrap_or("").parse::<i64>().unwrap_or(0);
-        fields.push(("tariff".to_string(), FieldValue::Integer(val)));
+        let val = t.as_str().unwrap_or("").parse::<f64>().unwrap_or(0.0);
+        fields.push(("tariff".to_string(), FieldValue::Float(val)));
     }
 
     if fields.is_empty() {
@@ -99,7 +99,7 @@ pub fn parse_json_data(
 
     Ok(ParsedReading {
         ow_id: ow_id.to_string(),
-        device_type: "p1m5".to_string(),
+        device_type: String::new(),
         sn_or_mac: sn,
         fields,
         timestamp_ns,
@@ -135,7 +135,7 @@ pub fn parse_json_config(
 
     Ok(ParsedReading {
         ow_id: ow_id.to_string(),
-        device_type: "p1m5".to_string(),
+        device_type: String::new(),
         sn_or_mac: String::new(),
         fields,
         timestamp_ns,
@@ -201,7 +201,7 @@ fn map_obis_to_field(key: &str, value: &str) -> Option<(String, FieldValue)> {
         "1-0:2.8.2" => parse_kwh(value).map(|v| ("e_received_t2".into(), FieldValue::Float(v))),
         "0-1:24.2.1" => parse_gas(value).map(|v| ("gas_m3".into(), FieldValue::Float(v))),
         "0-0:96.14.0" => {
-            parse_tariff(value).map(|v| ("tariff".into(), FieldValue::Integer(v)))
+            parse_tariff(value).map(|v| ("tariff".into(), FieldValue::Float(v)))
         }
         _ => None,
     }
@@ -232,8 +232,8 @@ fn parse_gas(value: &str) -> Option<f64> {
     Some(v)
 }
 
-fn parse_tariff(value: &str) -> Option<i64> {
-    let v: i64 = value.split('*').next()?.parse().ok()?;
+fn parse_tariff(value: &str) -> Option<f64> {
+    let v: f64 = value.split('*').next()?.parse().ok()?;
     Some(v)
 }
 
@@ -262,7 +262,7 @@ mod tests {
 
         let result = parse_dsmr(telegram, "p1m5_TEST", 0).unwrap();
         assert_eq!(result.ow_id, "p1m5_TEST");
-        assert_eq!(result.device_type, "p1m5");
+        assert_eq!(result.device_type, "");
 
         let fields: HashMap<&str, &FieldValue> = result
             .fields
@@ -303,7 +303,7 @@ mod tests {
     fn test_line_protocol() {
         let reading = ParsedReading {
             ow_id: "p1m5_TEST".into(),
-            device_type: "p1m5".into(),
+            device_type: String::new(),
             sn_or_mac: "12345".into(),
             fields: vec![
                 ("v_l1".into(), FieldValue::Float(230.0)),
@@ -312,7 +312,7 @@ mod tests {
             timestamp_ns: 1234567890000000000,
         };
         let lp = reading.to_line_protocol("readings");
-        assert!(lp.starts_with("readings,ow_id=p1m5_TEST,device_type=p1m5,sn=12345 "));
+        assert!(lp.starts_with("readings,ow_id=p1m5_TEST,sn=12345 "));
         assert!(lp.contains("v_l1=230"));
         assert!(lp.contains("w_delivered=500i"));
         assert!(lp.contains("1234567890000000000"));

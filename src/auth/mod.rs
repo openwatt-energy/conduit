@@ -14,6 +14,11 @@ pub trait AuthProvider: Send + Sync {
     async fn authenticate(&self, connect: &Connect) -> Result<String, AuthError>;
 
     fn check_topic_access(&self, client_id: &str, topic: &str, is_subscribe: bool) -> AclResult;
+
+    /// Resolve the canonical ow_id (InfluxDB tag) for a given authenticated client_id.
+    fn resolve_ow_id(&self, _client_id: &str) -> String {
+        _client_id.to_string()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -101,6 +106,28 @@ impl AuthProvider for PasswordAuth {
         let allowed = topic_owned_by_client(client_id, topic);
         AclResult { allowed }
     }
+
+    fn resolve_ow_id(&self, client_id: &str) -> String {
+        // v1.0.47+ P1<HEX3> format: look up the corresponding P1M5_<MAC> entry
+        if client_id.len() == 8 && client_id.starts_with("P1") {
+            let registry = self.registry.read().unwrap();
+            // Search for a P1M5_<MAC> entry whose last 6 hex chars match client_id[2..]
+            let suffix = &client_id[2..].to_lowercase();
+            for entry in registry.iter() {
+                if entry.dongle.starts_with("P1M5_") {
+                    let mac = &entry.dongle[5..]; // strip P1M5_
+                    if mac.ends_with(suffix) && mac.len() == 12 {
+                        return format!("ow_{}", mac);
+                    }
+                }
+            }
+        }
+        // P1M5_<MAC> format: return ow_<MAC>
+        if let Some(mac) = client_id.strip_prefix("P1M5_") {
+            return format!("ow_{}", mac);
+        }
+        client_id.to_string()
+    }
 }
 
 fn topic_owned_by_client(client_id: &str, topic: &str) -> bool {
@@ -165,5 +192,9 @@ impl AuthProvider for CompositeAuth {
 
     fn check_topic_access(&self, client_id: &str, topic: &str, is_subscribe: bool) -> AclResult {
         self.password.check_topic_access(client_id, topic, is_subscribe)
+    }
+
+    fn resolve_ow_id(&self, client_id: &str) -> String {
+        self.password.resolve_ow_id(client_id)
     }
 }
