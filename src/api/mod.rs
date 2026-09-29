@@ -3,8 +3,9 @@ use crate::config::RegistryConfig;
 use crate::mqtt::protocol::Packet;
 use crate::mqtt::server::ServerStats;
 use axum::extract::{Path, State};
-use axum::http::StatusCode;
-use axum::response::Json;
+use axum::http::{Request, StatusCode};
+use axum::middleware::{self, Next};
+use axum::response::{Json, Response};
 use axum::routing::{get, post};
 use serde::Serialize;
 use std::collections::HashMap;
@@ -28,14 +29,40 @@ pub struct AppState {
 }
 
 pub fn router(state: AppState) -> axum::Router {
-    axum::Router::new()
-        .route("/health", get(health))
+    let authed = axum::Router::new()
         .route("/status", get(status))
         .route("/metrics", get(metrics))
         .route("/admin/reload", post(admin_reload))
         .route("/admin/clients", get(admin_clients))
         .route("/command/{device_id}", post(command_send))
+        .layer(middleware::from_fn_with_state(
+            state.admin_token.clone(),
+            require_auth,
+        ));
+
+    axum::Router::new()
+        .route("/health", get(health))
+        .merge(authed)
         .with_state(state)
+}
+
+async fn require_auth(
+    State(token): State<String>,
+    req: Request<axum::body::Body>,
+    next: Next,
+) -> Result<Response, StatusCode> {
+    let authed = req
+        .headers()
+        .get("authorization")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.strip_prefix("Bearer "))
+        .map(|v| v == token)
+        .unwrap_or(false);
+
+    if !authed {
+        return Err(StatusCode::UNAUTHORIZED);
+    }
+    Ok(next.run(req).await)
 }
 
 #[derive(Serialize)]

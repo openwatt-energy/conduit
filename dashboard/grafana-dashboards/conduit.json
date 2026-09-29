@@ -1,0 +1,124 @@
+{
+  "annotations": { "list": [{ "builtIn": 1, "datasource": { "type": "grafana" }, "enable": true, "hide": true, "iconColor": "rgba(0,211,255,1)", "name": "Annotations & Alerts", "target": { "limit": 100 }, "type": "dashboard" }] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1000 }] },
+          "unit": "none"
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "values": false, "calcs": ["lastNotNull"] } },
+      "pluginVersion": "9.5.0",
+      "targets": [{ "datasource": { "type": "prometheus" }, "expr": "owmqtt_connections" }],
+      "title": "Active Connections",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.1 }] },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "values": false, "calcs": ["lastNotNull"] } },
+      "targets": [{ "datasource": { "type": "prometheus" }, "expr": "owmqtt_messages_rate" }],
+      "title": "Messages / sec",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] },
+          "unit": "none"
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "id": 3,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "values": false, "calcs": ["lastNotNull"] } },
+      "targets": [{ "datasource": { "type": "prometheus" }, "expr": "owmqtt_auth_failures_total" }],
+      "title": "Auth Failures",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 8 },
+      "id": 4,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "targets": [
+        { "datasource": { "type": "prometheus" }, "expr": "rate(owmqtt_messages_total[1m])", "legendFormat": "msgs/s" },
+        { "datasource": { "type": "prometheus" }, "expr": "rate(owmqtt_parse_errors_total[1m])", "legendFormat": "parse errors/s" },
+        { "datasource": { "type": "prometheus" }, "expr": "rate(owmqtt_influx_flushed_total[1m])", "legendFormat": "influx flushed/s" },
+        { "datasource": { "type": "prometheus" }, "expr": "rate(owmqtt_influx_failed_total[1m])", "legendFormat": "influx failed/s" }
+      ],
+      "title": "Throughput (rate)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+      "id": 5,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        { "datasource": { "type": "prometheus" }, "expr": "owmqtt_messages_total", "legendFormat": "messages" },
+        { "datasource": { "type": "prometheus" }, "expr": "owmqtt_parse_errors_total", "legendFormat": "parse errors" }
+      ],
+      "title": "Cumulative Messages vs Parse Errors",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+      "id": 6,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        { "datasource": { "type": "prometheus" }, "expr": "owmqtt_influx_flushed_total", "legendFormat": "flushed" },
+        { "datasource": { "type": "prometheus" }, "expr": "owmqtt_influx_failed_total", "legendFormat": "failed" }
+      ],
+      "title": "InfluxDB Writes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "influxdb" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 26 },
+      "id": 7,
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } },
+      "targets": [
+        {
+          "datasource": { "type": "influxdb", "uid": "influxdb-openwatt" },
+          "query": "from(bucket: \"openwatt\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"p1_dongles\")\n  |> filter(fn: (r) => r._field == \"v_l1\" or r._field == \"w_delivered\")\n  |> aggregateWindow(every: 1m, fn: count)\n  |> group(columns: [\"_field\"])\n  |> sum()",
+          "resultFormat": "time_series"
+        }
+      ],
+      "title": "Device Data Points / min (all devices)",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 37,
+  "tags": ["conduit", "openwatt"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Conduit MQTT Broker",
+  "uid": "conduit-main",
+  "version": 1
+}
