@@ -46,7 +46,18 @@ pub struct BrandConfig {
 #[derive(Debug, Clone, Deserialize)]
 pub struct ParserConfig {
     pub p1m5: BrandConfig,
+    #[serde(default)]
     pub smartstuff: BrandConfig,
+}
+
+impl Default for BrandConfig {
+    fn default() -> Self {
+        BrandConfig {
+            topics: HashMap::new(),
+            variables: HashMap::new(),
+            ignored_variables: Vec::new(),
+        }
+    }
 }
 
 /// Global config cache — deserialized once on first access.
@@ -56,9 +67,10 @@ pub fn get_config() -> &'static ParserConfig {
     CONFIG.get_or_init(|| {
         let mut cfg: ParserConfig =
             serde_json::from_str(P1M5_CONFIG_JSON).expect("failed to parse configs/p1m5.json");
-        let ss: ParserConfig = serde_json::from_str(SMARTSTUFF_CONFIG_JSON)
+        let ss: serde_json::Value = serde_json::from_str(SMARTSTUFF_CONFIG_JSON)
             .expect("failed to parse configs/smartstuff.json");
-        cfg.smartstuff = ss.smartstuff;
+        cfg.smartstuff = serde_json::from_value(ss["smartstuff"].clone())
+            .unwrap_or_default();
         cfg
     })
 }
