@@ -4,6 +4,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends pkg-config libs
 
 WORKDIR /app
 COPY Cargo.toml Cargo.lock* ./
+COPY configs/ configs/
 COPY src/ src/
 
 RUN cargo build --release && \

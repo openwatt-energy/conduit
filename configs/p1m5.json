@@ -1,0 +1,51 @@
+{
+  "p1m5": {
+    "topics": {
+      "data/readings": {
+        "fields": {
+          "0-0:96.1.1": { "name": "equipment_id", "type": "string" },
+          "0-0:96.1.4": { "name": "p1_version", "type": "string" },
+          "0-0:96.14.0": { "name": "tariff", "type": "float" },
+          "1-0:1.8.1": { "name": "kwh_delivered_t1", "type": "float" },
+          "1-0:1.8.2": { "name": "kwh_delivered_t2", "type": "float" },
+          "1-0:2.8.1": { "name": "kwh_returned_t1", "type": "float" },
+          "1-0:2.8.2": { "name": "kwh_returned_t2", "type": "float" },
+          "1-0:1.7.0": { "name": "w_delivered", "type": "float", "scale": 1000 },
+          "1-0:2.7.0": { "name": "w_returned", "type": "float", "scale": 1000 },
+          "1-0:21.7.0": { "name": "w_delivered_l1", "type": "float", "scale": 1000 },
+          "1-0:22.7.0": { "name": "w_returned_l1", "type": "float", "scale": 1000 },
+          "1-0:41.7.0": { "name": "w_delivered_l2", "type": "float", "scale": 1000 },
+          "1-0:42.7.0": { "name": "w_returned_l2", "type": "float", "scale": 1000 },
+          "1-0:61.7.0": { "name": "w_delivered_l3", "type": "float", "scale": 1000 },
+          "1-0:62.7.0": { "name": "w_returned_l3", "type": "float", "scale": 1000 },
+          "1-0:32.7.0": { "name": "v_l1", "type": "float" },
+          "1-0:52.7.0": { "name": "v_l2", "type": "float" },
+          "1-0:72.7.0": { "name": "v_l3", "type": "float" },
+          "1-0:31.7.0": { "name": "a_l1", "type": "float" },
+          "1-0:51.7.0": { "name": "a_l2", "type": "float" },
+          "1-0:71.7.0": { "name": "a_l3", "type": "float" },
+          "1-0:94.32.1": { "name": "grid_config", "type": "float" },
+          "0-1:24.2.1": { "name": "gas_m3", "type": "float" }
+        }
+      },
+      "sys/config": {
+        "fields": {
+          "fw_ver": { "name": "fw_version", "type": "string" },
+          "uptime": { "name": "uptime", "type": "integer" },
+          "boot_count": { "name": "reboots", "type": "integer" },
+          "wifi_rssi": { "name": "wifi_rssi", "type": "integer" },
+          "wifi_percent": { "name": "wifi_percent", "type": "integer" },
+          "wifi_ssid": { "name": "wifi_ssid", "type": "string" },
+          "dongle_ip": { "name": "dongle_ip", "type": "string" },
+          "mqtt_host": { "name": "mqtt_host", "type": "string" },
+          "mqtt_topic": { "name": "mqtt_topic", "type": "string" },
+          "mqtt_connected": { "name": "mqtt_connected", "type": "boolean" },
+          "p1_connected": { "name": "p1_connected", "type": "boolean" },
+          "ts": { "name": "ts", "type": "string", "ignored": true },
+          "reset_reason": { "name": "reset_reason", "type": "string" },
+          "email": { "name": "email", "type": "string", "ignored": true }
+        }
+      }
+    }
+  }
+}

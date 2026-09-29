@@ -1,6 +1,7 @@
 use bytes::Bytes;
 use serde::Serialize;
 
+pub mod config;
 pub mod p1m5;
 pub mod smart_stuff;
 
@@ -39,8 +40,6 @@ impl ParsedReading {
             s.push_str(",device_type=");
             s.push_str(&self.device_type);
         }
-        s.push_str(",sn=");
-        s.push_str(&self.sn_or_mac);
 
         s.push(' ');
         for (i, (name, value)) in self.fields.iter().enumerate() {
