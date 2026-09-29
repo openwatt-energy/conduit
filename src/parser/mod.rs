@@ -35,8 +35,10 @@ impl ParsedReading {
         s.push_str(measurement);
         s.push_str(",ow_id=");
         s.push_str(&self.ow_id);
-        s.push_str(",device_type=");
-        s.push_str(&self.device_type);
+        if !self.device_type.is_empty() {
+            s.push_str(",device_type=");
+            s.push_str(&self.device_type);
+        }
         s.push_str(",sn=");
         s.push_str(&self.sn_or_mac);
 
