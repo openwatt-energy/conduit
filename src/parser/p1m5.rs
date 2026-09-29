@@ -140,7 +140,7 @@ fn json_value_to_field(val: &serde_json::Value, field_type: &str) -> Option<Fiel
     }
 }
 
-fn apply_scale(val: FieldValue, scale: Option<f64>) -> FieldValue {
+pub fn apply_scale(val: FieldValue, scale: Option<f64>) -> FieldValue {
     match (val, scale) {
         (FieldValue::Float(v), Some(s)) => FieldValue::Float(v * s),
         (FieldValue::Integer(v), Some(s)) => FieldValue::Float(v as f64 * s),

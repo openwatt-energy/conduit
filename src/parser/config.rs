@@ -4,6 +4,7 @@ use std::sync::OnceLock;
 
 /// Inline-embedded at compile time — zero runtime IO, same perf as hardcoded.
 static P1M5_CONFIG_JSON: &str = include_str!("../../configs/p1m5.json");
+static SMARTSTUFF_CONFIG_JSON: &str = include_str!("../../configs/smartstuff.json");
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct FieldMapping {
@@ -27,8 +28,25 @@ pub struct BrandTopics {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct VariableMapping {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub field_type: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct BrandConfig {
+    pub topics: HashMap<String, TopicConfig>,
+    #[serde(default)]
+    pub variables: HashMap<String, VariableMapping>,
+    #[serde(default)]
+    pub ignored_variables: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct ParserConfig {
-    pub p1m5: BrandTopics,
+    pub p1m5: BrandConfig,
+    pub smartstuff: BrandConfig,
 }
 
 /// Global config cache — deserialized once on first access.
@@ -36,8 +54,12 @@ static CONFIG: OnceLock<ParserConfig> = OnceLock::new();
 
 pub fn get_config() -> &'static ParserConfig {
     CONFIG.get_or_init(|| {
-        serde_json::from_str(P1M5_CONFIG_JSON)
-            .expect("failed to parse configs/p1m5.json")
+        let mut cfg: ParserConfig =
+            serde_json::from_str(P1M5_CONFIG_JSON).expect("failed to parse configs/p1m5.json");
+        let ss: ParserConfig = serde_json::from_str(SMARTSTUFF_CONFIG_JSON)
+            .expect("failed to parse configs/smartstuff.json");
+        cfg.smartstuff = ss.smartstuff;
+        cfg
     })
 }
 
@@ -56,5 +78,12 @@ mod tests {
         let config = &cfg.p1m5.topics["sys/config"].fields;
         assert_eq!(config["fw_ver"].name, "fw_version");
         assert!(config["email"].ignored);
+
+        // Smart Stuff
+        let data = &cfg.smartstuff.topics["data"].fields;
+        assert_eq!(data["power_delivered"].name, "w_delivered");
+        assert_eq!(data["power_delivered"].scale, Some(1000.0));
+        assert_eq!(data["temperature"].name, "temp");
+        assert_eq!(cfg.smartstuff.variables["firmware"].name, "fw");
     }
 }

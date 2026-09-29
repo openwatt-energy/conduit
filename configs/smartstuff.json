@@ -1,0 +1,42 @@
+{
+  "smartstuff": {
+    "topics": {
+      "data": {
+        "fields": {
+          "timestamp": { "name": "ts", "type": "string", "ignored": true },
+          "energy_delivered_tariff1": { "name": "kwh_delivered_t1", "type": "float" },
+          "energy_delivered_tariff2": { "name": "kwh_delivered_t2", "type": "float" },
+          "energy_returned_tariff1": { "name": "kwh_returned_t1", "type": "float" },
+          "energy_returned_tariff2": { "name": "kwh_returned_t2", "type": "float" },
+          "electricity_tariff": { "name": "tariff", "type": "float" },
+          "power_delivered": { "name": "w_delivered", "type": "float", "scale": 1000 },
+          "power_delivered_l1": { "name": "w_delivered_l1", "type": "float", "scale": 1000 },
+          "power_delivered_l2": { "name": "w_delivered_l2", "type": "float", "scale": 1000 },
+          "power_delivered_l3": { "name": "w_delivered_l3", "type": "float", "scale": 1000 },
+          "power_returned": { "name": "w_returned", "type": "float", "scale": 1000 },
+          "power_returned_l1": { "name": "w_returned_l1", "type": "float", "scale": 1000 },
+          "power_returned_l2": { "name": "w_returned_l2", "type": "float", "scale": 1000 },
+          "power_returned_l3": { "name": "w_returned_l3", "type": "float", "scale": 1000 },
+          "voltage_l1": { "name": "v_l1", "type": "float" },
+          "voltage_l2": { "name": "v_l2", "type": "float" },
+          "voltage_l3": { "name": "v_l3", "type": "float" },
+          "current_l1": { "name": "a_l1", "type": "float" },
+          "current_l2": { "name": "a_l2", "type": "float" },
+          "current_l3": { "name": "a_l3", "type": "float" },
+          "temperature": { "name": "temp", "type": "float" },
+          "gas": { "name": "gas_m3", "type": "float" }
+        }
+      }
+    },
+    "variables": {
+      "identification": { "name": "id", "type": "string" },
+      "firmware": { "name": "fw", "type": "string" },
+      "ip_address": { "name": "ip", "type": "string" },
+      "mac": { "name": "mac", "type": "string" },
+      "wifi_rssi": { "name": "wifi_rssi", "type": "string" },
+      "p1_version": { "name": "p1_version", "type": "string" },
+      "equipment_id": { "name": "equipment_id", "type": "string" }
+    },
+    "ignored_variables": ["LWT", "gas_equipment_id", "highest_peak_pwr_ts"]
+  }
+}

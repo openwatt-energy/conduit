@@ -123,7 +123,14 @@ pub fn parse_telemetry(packet: &TelemetryPacket) -> Result<ParsedReading, String
                 p1m5::parse_dsmr(&text, &packet.ow_id, now)
             }
         } else if topic.starts_with("BEPR/") {
-            smart_stuff::parse_json(&text, &packet.ow_id, now)
+            let parts: Vec<&str> = topic.split('/').collect();
+            if parts.len() >= 3 && parts[2] == "data" {
+                smart_stuff::parse_json(&text, &packet.ow_id, now)
+            } else {
+                // Single-variable topic: BEPR/{mac}/firmware
+                let variable = parts.get(2).unwrap_or(&"");
+                smart_stuff::parse_variable(variable, &text, &packet.ow_id, now)
+            }
         } else {
             Err(format!("unknown data topic: {topic}"))
         }
