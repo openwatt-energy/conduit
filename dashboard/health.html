@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Conduit Health</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;margin:0;padding:0}
+body{padding:1.5rem;max-width:1100px;margin:0 auto}
+h1{margin:0 0 .5rem;font-size:1.4rem;color:#f0f6fc}
+h1 span{color:#58a6ff;font-weight:400;font-size:.85rem}
+.sub{color:#8b949e;font-size:.8rem;margin-bottom:1.5rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.75rem;margin-bottom:1.5rem}
+.card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:1rem}
+.card.alert{border-color:#d2991d;background:#1e1a16}
+.card.ok{border-color:#238636}
+.label{font-size:.65rem;color:#8b949e;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+.value{font-size:2rem;font-weight:700;font-variant-numeric:tabular-nums}
+.value.ok{color:#3fb950}
+.value.warn{color:#d2991d}
+.value.err{color:#f85149}
+.value.info{color:#58a6ff}
+.log{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:.75rem;font-family:ui-monospace,monospace;font-size:.75rem;line-height:1.6;max-height:280px;overflow-y:auto;color:#8b949e}
+.log .ts{color:#484f58;margin-right:.5rem}
+.log .ok{color:#3fb950}.log .warn{color:#d2991d}.log .err{color:#f85149}
+</style>
+</head>
+<body>
+<h1>Conduit MQTT <span id="ver"></span></h1>
+<div class="sub">Health dashboard — real-time <span id="refresh">3s</span></div>
+<div class="grid" id="grid"></div>
+<pre class="log" id="log"></pre>
+<script>
+const HOST="";
+const TOKEN="REDACTED_API_TOKEN";
+const fmt=n=>typeof n==="number"?n.toLocaleString():n??"--";
+const uptime=v=>{const h=Math.floor(v/3600),m=Math.floor(v%3600/60),s=v%60;return h+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")};
+
+const cards={
+  connected_devices:{label:"Connected",cls:v=>v>0?"ok":"err",fmt},
+  messages_processed:{label:"Messages",cls:()=>"info",fmt},
+  auth_failures:{label:"Auth Failures",cls:v=>v===0?"ok":"warn",fmt},
+  parse_errors:{label:"Parse Errors",cls:v=>v===0?"ok":"warn",fmt},
+  influx_flushed:{label:"Flushed",cls:()=>"ok",fmt},
+  influx_failed:{label:"Failed",cls:v=>v===0?"ok":"err",fmt},
+  registry_entries:{label:"Registry",cls:()=>"info",fmt},
+  uptime_secs:{label:"Uptime",cls:()=>"ok",fmt:uptime}
+};
+
+const grid=document.getElementById("grid");
+for(const[k,c]of Object.entries(cards)){
+  const el=document.createElement("div");
+  el.className="card";el.id="card-"+k;
+  el.innerHTML=`<div class="label">${c.label}</div><div class="value">--</div>`;
+  grid.appendChild(el);
+}
+
+const logEl=document.getElementById("log");
+let prev={count:0},lines=[];
+function logLine(level,msg){
+  const ts=new Date().toISOString().slice(11,19);
+  lines.unshift(`<span class="ts">${ts}</span> <span class="${level}">${msg}</span>`);
+  if(lines.length>60)lines.pop();
+  logEl.innerHTML=lines.join("\n");
+}
+
+async function poll(){
+  try{
+    const r=await fetch(HOST+"/status",{headers:{Authorization:"Bearer "+TOKEN}});
+    const d=await r.json();
+    document.getElementById("ver").textContent="v"+d.version;
+
+    for(const[k,c]of Object.entries(cards)){
+      const v=d[k],el=document.getElementById("card-"+k);
+      if(!el)continue;
+      const val=el.querySelector(".value");
+      val.textContent=c.fmt(v);
+      val.className="value "+c.cls(v);
+      el.className="card "+(c.cls(v)==="err"?"alert":c.cls(v)==="ok"?"ok":"");
+    }
+
+    if(d.messages_processed!==prev.count&&prev.count>0){
+      const delta=d.messages_processed-prev.count;
+      logLine("ok",`+${delta} msgs — conn=${d.connected_devices} flushed=${d.influx_flushed} failed=${d.influx_failed}`);
+    }
+    prev={...d,count:d.messages_processed};
+  }catch(e){
+    logLine("err",""+e);
+  }
+}
+
+poll();setInterval(poll,3000);
+</script>
+</body>
+</html>
