@@ -1,0 +1,77 @@
+# Conduit docker-compose — prod + test instances.
+#
+# Usage:
+#   docker-compose up -d             # start both
+#   docker-compose up -d conduit     # prod only
+#   docker-compose up -d conduit-test # test only
+#
+# Env vars required:
+#   CONDUIT_INFLUX_TOKEN
+#   CONDUIT_REGISTRY_URL
+#   CONDUIT_REGISTRY_API_KEY
+#   CONDUIT_AUTH_SALT
+#   CONDUIT_API_ADMIN_TOKEN
+
+version: "3.8"
+
+services:
+  # ── Production instance ──────────────────────────────────────────
+  conduit:
+    image: ghcr.io/openwatt-energy/conduit:latest
+    restart: unless-stopped
+    ports:
+      - "1883:1883"               # MQTT plain (dongles)
+      - "127.0.0.1:8884:8883"     # MQTT internal (for nginx TLS proxy)
+      - "127.0.0.1:9091:9090"     # API internal (for nginx HTTP proxy)
+    environment:
+      RUST_LOG: conduitd=info
+      CONDUIT_PLAIN_ENABLED: "1"
+      CONDUIT_PLAIN_ADDR: 0.0.0.0:1883
+      CONDUIT_TLS_ADDR: 0.0.0.0:8883
+      CONDUIT_API_ADDR: 0.0.0.0:9090
+      CONDUIT_INFLUX_URL: https://REDACTED_IP:8086
+      CONDUIT_INFLUX_ORG: OpenWatt
+      CONDUIT_INFLUX_BUCKET: openwatt
+      CONDUIT_INFLUX_TOKEN: ${CONDUIT_INFLUX_TOKEN}
+      CONDUIT_REGISTRY_URL: ${CONDUIT_REGISTRY_URL}
+      CONDUIT_REGISTRY_RELOAD_SECS: "300"
+      CONDUIT_REGISTRY_API_KEY: ${CONDUIT_REGISTRY_API_KEY}
+      CONDUIT_AUTH_SALT: ${CONDUIT_AUTH_SALT}
+      CONDUIT_API_ADMIN_TOKEN: ${CONDUIT_API_ADMIN_TOKEN}
+
+  # ── Test instance ────────────────────────────────────────────────
+  conduit-test:
+    image: ghcr.io/openwatt-energy/conduit:latest
+    restart: unless-stopped
+    profiles:
+      - test
+    ports:
+      - "1884:1883"               # MQTT plain (test dongles)
+      - "127.0.0.1:8886:8883"     # MQTT internal (for nginx TLS proxy)
+      - "127.0.0.1:9092:9090"     # API internal (for nginx HTTP proxy)
+    environment:
+      RUST_LOG: conduitd=debug
+      CONDUIT_PLAIN_ENABLED: "1"
+      CONDUIT_PLAIN_ADDR: 0.0.0.0:1883
+      CONDUIT_TLS_ADDR: 0.0.0.0:8883
+      CONDUIT_API_ADDR: 0.0.0.0:9090
+      CONDUIT_INFLUX_URL: https://REDACTED_IP:8086
+      CONDUIT_INFLUX_ORG: OpenWatt
+      CONDUIT_INFLUX_BUCKET: openwatt_test
+      CONDUIT_INFLUX_TOKEN: ${CONDUIT_INFLUX_TOKEN}
+      CONDUIT_REGISTRY_URL: ${CONDUIT_REGISTRY_URL}
+      CONDUIT_REGISTRY_RELOAD_SECS: "300"
+      CONDUIT_REGISTRY_API_KEY: ${CONDUIT_REGISTRY_API_KEY}
+      CONDUIT_AUTH_SALT: ${CONDUIT_AUTH_SALT}
+      CONDUIT_API_ADMIN_TOKEN: ${CONDUIT_API_ADMIN_TOKEN}
+
+  # ── Nginx (TLS termination + dashboard + API proxy) ──────────────
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - /etc/conduit/certs/cert.pem:/etc/nginx/cert.pem:ro
+      - /etc/conduit/certs/key.pem:/etc/nginx/key.pem:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./health.html:/etc/nginx/html/health.html:ro
