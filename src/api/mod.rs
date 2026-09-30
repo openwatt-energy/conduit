@@ -87,6 +87,7 @@ struct StatusResponse {
     influx_flushed: usize,
     influx_failed: usize,
     registry_entries: usize,
+    recent_auth_failures: Vec<crate::mqtt::server::AuthFailure>,
 }
 
 async fn status(State(state): State<AppState>) -> Json<StatusResponse> {
@@ -118,6 +119,12 @@ async fn status(State(state): State<AppState>) -> Json<StatusResponse> {
             .influx_failed
             .load(std::sync::atomic::Ordering::Relaxed),
         registry_entries: state.auth.registry().len(),
+        recent_auth_failures: state
+            .stats
+            .recent_auth_failures
+            .lock()
+            .unwrap()
+            .clone(),
     })
 }
 

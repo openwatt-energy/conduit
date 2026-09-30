@@ -3,11 +3,20 @@ use crate::mqtt::protocol::*;
 use crate::parser::{ParsedReading, TelemetryPacket};
 use bytes::BytesMut;
 use std::sync::Arc;
+use std::sync::Mutex;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
 use tokio::time::Duration;
 use tracing::{debug, info, warn};
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct AuthFailure {
+    pub timestamp: String,
+    pub username: String,
+    pub client_id: String,
+    pub ip: String,
+}
 
 #[derive(Clone)]
 pub struct ServerStats {
@@ -15,7 +24,10 @@ pub struct ServerStats {
     pub auth_failures: Arc<std::sync::atomic::AtomicUsize>,
     pub messages_processed: Arc<std::sync::atomic::AtomicUsize>,
     pub parse_errors: Arc<std::sync::atomic::AtomicUsize>,
+    pub recent_auth_failures: Arc<Mutex<Vec<AuthFailure>>>,
 }
+
+const MAX_RECENT_FAILURES: usize = 50;
 
 impl ServerStats {
     pub fn new() -> Self {
@@ -24,7 +36,19 @@ impl ServerStats {
             auth_failures: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
             messages_processed: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
             parse_errors: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
+            recent_auth_failures: Arc::new(Mutex::new(Vec::new())),
         }
+    }
+
+    pub fn record_auth_failure(&self, username: &str, client_id: &str, ip: &str) {
+        let mut failures = self.recent_auth_failures.lock().unwrap();
+        failures.insert(0, AuthFailure {
+            timestamp: chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            username: username.to_string(),
+            client_id: client_id.to_string(),
+            ip: ip.to_string(),
+        });
+        failures.truncate(MAX_RECENT_FAILURES);
     }
 }
 
@@ -108,6 +132,11 @@ async fn handle_connection(
     let device_id = match auth.authenticate(&connect).await {
         Ok(id) => id,
         Err(_) => {
+            let username = connect.username.clone().unwrap_or_default();
+            let client_id = connect.client_id.clone();
+            let ip = stream.peer_addr().map(|a| a.to_string()).unwrap_or_else(|_| "?".into());
+            warn!("auth failed: user={username:?} client={client_id} ip={ip}");
+            stats.record_auth_failure(&username, &client_id, &ip);
             let _ = send_connack(&mut stream, ConnAckCode::BadUsernameOrPassword).await;
             stats
                 .auth_failures

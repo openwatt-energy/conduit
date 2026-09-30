@@ -23,6 +23,11 @@ h2{font-size:1rem;color:#58a6ff;margin:1.2rem 0 .5rem;padding-bottom:.3rem;borde
 .log .ts{color:#484f58;margin-right:.4rem}
 .log .ok{color:#3fb950}.log .warn{color:#d2991d}.log .err{color:#f85149}
 .hidden{display:none}
+.failures{margin:1rem 0 0;background:#161b22;border:1px solid #30363d;border-radius:8px;padding:.6rem;max-height:260px;overflow-y:auto}
+.failures table{width:100%;border-collapse:collapse;font-size:.72rem;font-family:ui-monospace,monospace}
+.failures th{text-align:left;color:#8b949e;font-weight:600;padding:.2rem .5rem;border-bottom:1px solid #30363d;position:sticky;top:0;background:#161b22}
+.failures td{padding:.15rem .5rem;color:#c9d1d9;border-bottom:1px solid #21262d}
+.failures td.err{color:#f85149}
 </style>
 </head>
 <body>
@@ -34,11 +39,19 @@ h2{font-size:1rem;color:#58a6ff;margin:1.2rem 0 .5rem;padding-bottom:.3rem;borde
 <div id="panel-prod">
   <h2>Production — openwatt bucket</h2>
   <div class="grid" id="grid-prod"></div>
+  <div class="failures" id="failures-prod" style="display:none">
+    <div class="label">Recent Auth Failures</div>
+    <table id="failures-table-prod"></table>
+  </div>
   <pre class="log" id="log-prod"></pre>
 </div>
 <div id="panel-test" class="hidden">
   <h2>Test — openwatt_test bucket</h2>
   <div class="grid" id="grid-test"></div>
+  <div class="failures" id="failures-test" style="display:none">
+    <div class="label">Recent Auth Failures</div>
+    <table id="failures-table-test"></table>
+  </div>
   <pre class="log" id="log-test"></pre>
 </div>
 <script>
@@ -94,6 +107,16 @@ async function pollInstance(instance,url){
       logLine(instance,"ok",`+${delta} msgs — conn=${d.connected_devices} flushed=${d.influx_flushed} failed=${d.influx_failed}`);
     }
     prev[instance]={...d,count:d.messages_processed};
+
+    // Render auth failures table
+    const failures=d.recent_auth_failures||[];
+    const tbl=document.getElementById("failures-table-"+instance);
+    const box=document.getElementById("failures-"+instance);
+    if(failures.length){
+      box.style.display="block";
+      tbl.innerHTML="<tr><th>Time</th><th>Username</th><th>IP</th></tr>"+
+        failures.map(f=>`<tr><td>${f.timestamp.slice(11,19)}</td><td class="err">${f.username}</td><td>${f.ip}</td></tr>`).join("");
+    }else{box.style.display="none";}
   }catch(e){logLine(instance,"err",""+e);}
 }
 
