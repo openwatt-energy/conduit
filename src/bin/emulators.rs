@@ -36,6 +36,7 @@ async fn mqtt_connect(
         keep_alive: 30,
         username: Some(username.to_string()),
         password: Some(password.as_bytes().to_vec()),
+        will: None,
     });
 
     let mut buf = BytesMut::new();
@@ -250,6 +251,7 @@ async fn run_auth_negative() -> Result<(), Box<dyn std::error::Error>> {
         keep_alive: 30,
         username: None,
         password: None,
+        will: None,
     });
     let mut buf = BytesMut::new();
     connect.encode(&mut buf);
