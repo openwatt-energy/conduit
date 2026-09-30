@@ -22,6 +22,15 @@ pub struct Connect {
     pub keep_alive: u16,
     pub username: Option<String>,
     pub password: Option<Vec<u8>>,
+    pub will: Option<LastWill>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct LastWill {
+    pub topic: String,
+    pub message: String,
+    pub qos: u8,
+    pub retain: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -310,6 +319,9 @@ fn decode_connect(src: &mut Bytes, _flags: u8) -> Result<Connect, DecodeError> {
     let flags = src.get_u8();
 
     let clean_session = (flags & 0x02) != 0;
+    let has_will = (flags & 0x04) != 0;
+    let will_qos = (flags & 0x18) >> 3;
+    let will_retain = (flags & 0x20) != 0;
     let has_username = (flags & 0x80) != 0;
     let has_password = (flags & 0x40) != 0;
 
@@ -318,6 +330,20 @@ fn decode_connect(src: &mut Bytes, _flags: u8) -> Result<Connect, DecodeError> {
     }
     let keep_alive = src.get_u16();
     let client_id = read_utf8(src)?;
+
+    // Will — parsed before username/password per MQTT 3.1.1 §3.1
+    let will = if has_will {
+        let will_topic = read_utf8(src)?;
+        let will_message = read_utf8(src)?;
+        Some(LastWill {
+            topic: will_topic,
+            message: will_message,
+            qos: will_qos,
+            retain: will_retain,
+        })
+    } else {
+        None
+    };
 
     let username = if has_username { Some(read_utf8(src)?) } else { None };
     let password = if has_password {
@@ -339,6 +365,7 @@ fn decode_connect(src: &mut Bytes, _flags: u8) -> Result<Connect, DecodeError> {
         keep_alive,
         username,
         password,
+        will,
     })
 }
 
@@ -349,6 +376,11 @@ fn encode_connect(p: &Connect, dst: &mut BytesMut) {
     payload.put_u8(4);
 
     let mut flags: u8 = 0;
+    if let Some(ref w) = p.will {
+        flags |= 0x04;
+        flags |= (w.qos & 0x03) << 3;
+        if w.retain { flags |= 0x20; }
+    }
     if p.username.is_some() {
         flags |= 0x80;
     }
@@ -361,6 +393,10 @@ fn encode_connect(p: &Connect, dst: &mut BytesMut) {
     payload.put_u8(flags);
     payload.put_u16(p.keep_alive);
     write_utf8(&p.client_id, &mut payload);
+    if let Some(ref w) = p.will {
+        write_utf8(&w.topic, &mut payload);
+        write_utf8(&w.message, &mut payload);
+    }
     if let Some(ref u) = p.username {
         write_utf8(u, &mut payload);
     }
@@ -539,6 +575,7 @@ mod tests {
             keep_alive: 60,
             username: Some("device".into()),
             password: Some(b"secret".to_vec()),
+            will: None,
         }));
     }
 
@@ -550,6 +587,7 @@ mod tests {
             keep_alive: 30,
             username: None,
             password: None,
+            will: None,
         }));
     }
 
