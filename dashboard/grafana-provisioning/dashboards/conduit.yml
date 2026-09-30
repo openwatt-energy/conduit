@@ -1,7 +1,0 @@
-apiVersion: 1
-providers:
-  - name: conduit
-    folder: Conduit
-    type: file
-    options:
-      path: /etc/grafana/dashboards
