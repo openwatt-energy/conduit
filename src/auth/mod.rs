@@ -1,7 +1,10 @@
 pub mod registry;
+pub mod static_devices;
 
 use async_trait::async_trait;
 use crate::mqtt::protocol::Connect;
+use crate::auth::static_devices::StaticDeviceAuth;
+use crate::auth::registry::DeviceEntry;
 use base64::Engine;
 
 #[derive(Debug, Clone)]
@@ -166,12 +169,14 @@ fn topic_owned_by_client(client_id: &str, topic: &str) -> bool {
 
 pub struct CompositeAuth {
     password: PasswordAuth,
+    static_devices: StaticDeviceAuth,
 }
 
 impl CompositeAuth {
     pub fn new(salt: String) -> Self {
         Self {
             password: PasswordAuth::new(salt),
+            static_devices: StaticDeviceAuth::from_embedded(),
         }
     }
 
@@ -187,14 +192,27 @@ impl CompositeAuth {
 #[async_trait]
 impl AuthProvider for CompositeAuth {
     async fn authenticate(&self, connect: &Connect) -> Result<String, AuthError> {
+        // Try static device auth first (1st-gen .be devices)
+        match self.static_devices.authenticate(connect).await {
+            Ok(id) => return Ok(id),
+            Err(_) => {}
+        }
         self.password.authenticate(connect).await
     }
 
     fn check_topic_access(&self, client_id: &str, topic: &str, is_subscribe: bool) -> AclResult {
+        // BEPR/ topics — use static device ACL
+        if topic.starts_with("BEPR/") {
+            return self.static_devices.check_topic_access(client_id, topic, is_subscribe);
+        }
         self.password.check_topic_access(client_id, topic, is_subscribe)
     }
 
     fn resolve_ow_id(&self, client_id: &str) -> String {
+        // Check if it's a known static device
+        if self.static_devices.passwords.contains_key(client_id) {
+            return self.static_devices.resolve_ow_id(client_id);
+        }
         self.password.resolve_ow_id(client_id)
     }
 }
