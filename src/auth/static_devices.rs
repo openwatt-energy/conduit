@@ -57,14 +57,10 @@ impl AuthProvider for StaticDeviceAuth {
     }
 
     fn check_topic_access(&self, client_id: &str, topic: &str, _is_subscribe: bool) -> AclResult {
-        // BEPR/ prefix + MAC-based client_id — same logic as smart stuff
-        let allowed = if client_id.len() >= 12 {
-            let mac_lower = client_id.to_lowercase();
-            topic.starts_with(&format!("BEPR/{mac_lower}"))
-                || topic.starts_with(&format!("BEPR/{}/", mac_lower))
-        } else {
-            false
-        };
+        let mac_lower = client_id.to_lowercase();
+        let topic_clean = topic.trim_start_matches('/');
+
+        let allowed = topic_clean.starts_with(&format!("BEPR/{mac_lower}"));
         AclResult { allowed }
     }
 
@@ -145,6 +141,8 @@ mod tests {
         let auth = StaticDeviceAuth::from_embedded();
         assert!(auth.check_topic_access("3030F9FD9234", "BEPR/3030f9fd9234/data", false).allowed);
         assert!(auth.check_topic_access("3030F9FD9234", "BEPR/other/data", false).allowed == false);
+        // Leading slash
+        assert!(auth.check_topic_access("3030F9FD9234", "/BEPR/3030f9fd9234/LWT", false).allowed);
     }
 
     #[test]
