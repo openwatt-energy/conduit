@@ -202,7 +202,7 @@ async fn handle_connection(
                             }
                         }
                         Err(e) => {
-                            debug!("parse error from {device_id}: {e}");
+                            warn!("parse error from {device_id} topic={}: {e}", publish.topic);
                             stats.parse_errors.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                         }
                     }
