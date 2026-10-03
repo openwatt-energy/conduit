@@ -32,17 +32,14 @@
         "fields": {
           "fw_ver": { "name": "fw_version", "type": "string" },
           "uptime": { "name": "uptime", "type": "integer" },
-          "boot_count": { "name": "reboots", "type": "integer" },
+          "reboots": { "name": "reboots", "type": "integer" },
           "wifi_rssi": { "name": "wifi_rssi", "type": "integer" },
-          "wifi_percent": { "name": "wifi_percent", "type": "integer" },
           "wifi_ssid": { "name": "wifi_ssid", "type": "string" },
           "dongle_ip": { "name": "dongle_ip", "type": "string" },
           "mqtt_host": { "name": "mqtt_host", "type": "string" },
+          "mqtt_port": { "name": "mqtt_port", "type": "string" },
           "mqtt_topic": { "name": "mqtt_topic", "type": "string" },
-          "mqtt_connected": { "name": "mqtt_connected", "type": "boolean" },
-          "p1_connected": { "name": "p1_connected", "type": "boolean" },
-          "ts": { "name": "ts", "type": "string", "ignored": true },
-          "reset_reason": { "name": "reset_reason", "type": "string" },
+          "customer": { "name": "customer", "type": "string" },
           "email": { "name": "email", "type": "string", "ignored": true }
         }
       }
