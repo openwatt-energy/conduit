@@ -194,6 +194,7 @@ async fn handle_connection(
                 if publish.topic.contains("/data") || publish.topic.contains("/sys") {
                     let ow_id = auth.resolve_ow_id(&device_id);
                     let _text = String::from_utf8_lossy(&publish.payload).to_string();
+                    let topic = publish.topic.clone();
                     match crate::parser::parse_telemetry(&TelemetryPacket { ow_id, topic: publish.topic, payload: publish.payload }) {
                         Ok(reading) => {
                             if influx_tx.send(reading).await.is_err() {
@@ -202,7 +203,7 @@ async fn handle_connection(
                             }
                         }
                         Err(e) => {
-                            warn!("parse error from {device_id} topic={}: {e}", publish.topic);
+                            warn!("parse error from {device_id} topic={topic}: {e}");
                             stats.parse_errors.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                         }
                     }
