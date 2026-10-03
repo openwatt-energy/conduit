@@ -14,6 +14,20 @@
 
 set -e
 
+# Auto-auth Docker to Artifact Registry (GCE metadata server)
+docker_auth() {
+    if [ -f /tmp/.docker/config.json ]; then return 0; fi
+    TOKEN=$(curl -sf -H "Metadata-Flavor: Google" \
+        "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token?scopes=https://www.googleapis.com/auth/cloud-platform" \
+        | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])" 2>/dev/null) || true
+    if [ -n "$TOKEN" ]; then
+        AUTH=$(echo -n "oauth2accesstoken:${TOKEN}" | base64 -w0)
+        sudo mkdir -p /tmp/.docker
+        echo "{\"auths\":{\"REDACTED_REGISTRY\":{\"auth\":\"${AUTH}\"}}}" | sudo tee /tmp/.docker/config.json > /dev/null
+    fi
+}
+docker_auth
+
 ENV=${1:-prod}
 ENV_FILE="${ENV}.env"
 
