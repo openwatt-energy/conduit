@@ -104,7 +104,7 @@ pub fn parse_telemetry(packet: &TelemetryPacket) -> Result<ParsedReading, String
     let topic = &packet.topic;
     let now = chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0);
 
-    if topic.contains("/data") {
+    if topic.contains("/data") || topic.contains("/sys") {
         let text = String::from_utf8_lossy(&packet.payload).to_string();
 
         if topic.starts_with("P1M5/") {
