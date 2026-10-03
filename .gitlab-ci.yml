@@ -35,7 +35,7 @@ build:
     - docker:24-dind
   before_script:
     - apk add --no-cache python3 curl
-    - echo "$GCP_SA_KEY" > /tmp/gcp-sa.json
+    - echo "$GCP_SA_KEY" | base64 -d > /tmp/gcp-sa.json
     - curl -fsSL https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz | tar xz
     - ./google-cloud-sdk/bin/gcloud auth activate-service-account --key-file=/tmp/gcp-sa.json
     - ./google-cloud-sdk/bin/gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin "https://${GCP_REGION}-docker.pkg.dev"
