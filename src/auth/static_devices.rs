@@ -56,11 +56,10 @@ impl AuthProvider for StaticDeviceAuth {
         Err(AuthError::UnknownDevice)
     }
 
-    fn check_topic_access(&self, client_id: &str, topic: &str, _is_subscribe: bool) -> AclResult {
+fn check_topic_access(&self, client_id: &str, topic: &str, _is_subscribe: bool) -> AclResult {
         let mac_lower = client_id.to_lowercase();
-        let topic_clean = topic.trim_start_matches('/');
-
-        let allowed = topic_clean.starts_with(&format!("BEPR/{mac_lower}"));
+        let topic_clean = topic.trim_start_matches('/').to_lowercase();
+        let allowed = topic_clean.starts_with(&format!("bepr/{mac_lower}"));
         AclResult { allowed }
     }
 

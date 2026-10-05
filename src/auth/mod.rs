@@ -201,8 +201,9 @@ impl AuthProvider for CompositeAuth {
     }
 
     fn check_topic_access(&self, client_id: &str, topic: &str, is_subscribe: bool) -> AclResult {
-        // BEPR/ topics — use static device ACL
-        if topic.starts_with("BEPR/") {
+        // BEPR/ topics (with or without leading slash) — use static device ACL
+        let t = topic.trim_start_matches('/');
+        if t.starts_with("BEPR/") {
             return self.static_devices.check_topic_access(client_id, topic, is_subscribe);
         }
         self.password.check_topic_access(client_id, topic, is_subscribe)
