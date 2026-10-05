@@ -4,6 +4,7 @@ use crate::parser::{ParsedReading, TelemetryPacket};
 use bytes::BytesMut;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::collections::HashSet;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
@@ -148,6 +149,10 @@ async fn handle_connection(
     let _ = send_connack(&mut stream, ConnAckCode::Accepted).await;
     info!("device {device_id} connected");
 
+    // Track denied topics per connection — only log first occurrence.
+    let mut denied_topics: HashSet<String> = HashSet::new();
+    const MAX_DENIED_CACHE: usize = 64;
+
     let (cmd_tx, mut cmd_rx) = mpsc::unbounded_channel::<Packet>();
     {
         let mut subs = command_subscribers.write().await;
@@ -184,10 +189,10 @@ async fn handle_connection(
                     .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
                 if !auth.check_topic_access(&device_id, &publish.topic, false).allowed {
-                    warn!(
-                        "ACL denied PUBLISH from {device_id} to {}",
-                        publish.topic
-                    );
+                    let key = format!("{device_id}|{}", publish.topic);
+                    if denied_topics.len() < MAX_DENIED_CACHE && denied_topics.insert(key) {
+                        warn!("ACL denied PUBLISH from {device_id} to {}", publish.topic);
+                    }
                     continue;
                 }
 
