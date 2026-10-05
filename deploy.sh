@@ -49,6 +49,7 @@ echo "[3/3] Restarting..."
 sudo docker rm -f "$NAME" 2>/dev/null || true
 sudo docker run -d \
     --name "$NAME" --restart unless-stopped \
+    --log-opt max-size=10m --log-opt max-file=3 \
     -p "${MQTT_PORT}:1883" -p "127.0.0.1:${MQTT_PROXY_PORT}:8883" -p "127.0.0.1:${API_PORT}:9090" \
     -e RUST_LOG="$RUST_LOG" -e CONDUIT_PLAIN_ENABLED="$CONDUIT_PLAIN_ENABLED" \
     -e CONDUIT_PLAIN_ADDR="$CONDUIT_PLAIN_ADDR" -e CONDUIT_TLS_ADDR="$CONDUIT_TLS_ADDR" \

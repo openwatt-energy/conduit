@@ -19,6 +19,11 @@ services:
   conduit:
     image: europe-west1-docker.pkg.dev/powertrader-399210/conduit/conduitd:latest
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     ports:
       - "1883:1883"               # MQTT plain (dongles)
       - "127.0.0.1:8884:8883"     # MQTT internal (for nginx TLS proxy)
@@ -45,6 +50,11 @@ services:
     restart: unless-stopped
     profiles:
       - test
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     ports:
       - "1884:1883"               # MQTT plain (test dongles)
       - "127.0.0.1:8886:8883"     # MQTT internal (for nginx TLS proxy)
@@ -68,6 +78,11 @@ services:
   # ── Nginx (TLS termination + dashboard + API proxy) ──────────────
   nginx:
     image: nginx:alpine
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
     network_mode: host
     volumes:
