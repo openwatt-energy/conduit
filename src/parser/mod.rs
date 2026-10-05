@@ -104,11 +104,11 @@ pub fn parse_telemetry(packet: &TelemetryPacket) -> Result<ParsedReading, String
     let topic = &packet.topic;
     let now = chrono::Utc::now().timestamp_nanos_opt().unwrap_or(0);
 
-    if topic.contains("/data") || topic.contains("/sys") {
+    if topic.contains("/data") || topic.contains("/sys") || topic.contains("/firmware") || topic.contains("/identification") || topic.contains("/equipment_id") || topic.contains("/ip_address") || topic.contains("/wifi_rssi") || topic.contains("/mac") || topic.contains("/p1_version") {
         let text = String::from_utf8_lossy(&packet.payload).to_string();
+        let t = topic.trim_start_matches('/');
 
-        if topic.starts_with("P1M5/") {
-            // v1.0.47+ firmware sends JSON, older firmware sends raw DSMR.
+        if t.starts_with("P1M5/") {
             if p1m5::is_json(&packet.payload) {
                 let json: serde_json::Value =
                     serde_json::from_slice(&packet.payload).map_err(|e| format!("JSON: {e}"))?;
@@ -122,14 +122,15 @@ pub fn parse_telemetry(packet: &TelemetryPacket) -> Result<ParsedReading, String
             } else {
                 p1m5::parse_dsmr(&text, &packet.ow_id, now)
             }
-        } else if topic.starts_with("BEPR/") {
-            let parts: Vec<&str> = topic.split('/').collect();
+        } else if t.starts_with("BEPR/") {
+            let parts: Vec<&str> = t.split('/').collect();
             if parts.len() >= 3 && parts[2] == "data" {
                 smart_stuff::parse_json(&text, &packet.ow_id, now)
-            } else {
-                // Single-variable topic: BEPR/{mac}/firmware
-                let variable = parts.get(2).unwrap_or(&"");
+            } else if parts.len() >= 3 {
+                let variable = parts[2];
                 smart_stuff::parse_variable(variable, &text, &packet.ow_id, now)
+            } else {
+                Err(format!("invalid BEPR topic: {topic}"))
             }
         } else {
             Err(format!("unknown data topic: {topic}"))
