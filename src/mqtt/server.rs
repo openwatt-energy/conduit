@@ -4,7 +4,7 @@ use crate::parser::{ParsedReading, TelemetryPacket};
 use bytes::BytesMut;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::collections::HashSet;
+use std::collections::HashMap;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
@@ -26,9 +26,14 @@ pub struct ServerStats {
     pub messages_processed: Arc<std::sync::atomic::AtomicUsize>,
     pub parse_errors: Arc<std::sync::atomic::AtomicUsize>,
     pub recent_auth_failures: Arc<Mutex<Vec<AuthFailure>>>,
+    /// Global dedup of ACL denials, keyed by `device|topic` with last-seen
+    /// timestamp. Prevents reconnection from re-spamming the same denial.
+    pub denied_seen: Arc<Mutex<HashMap<String, std::time::Instant>>>,
 }
 
 const MAX_RECENT_FAILURES: usize = 50;
+const DENIAL_DEDUP_TTL: std::time::Duration = std::time::Duration::from_secs(3600);
+const MAX_DENIAL_CACHE: usize = 512;
 
 impl ServerStats {
     pub fn new() -> Self {
@@ -38,6 +43,7 @@ impl ServerStats {
             messages_processed: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
             parse_errors: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
             recent_auth_failures: Arc::new(Mutex::new(Vec::new())),
+            denied_seen: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -50,6 +56,26 @@ impl ServerStats {
             ip: ip.to_string(),
         });
         failures.truncate(MAX_RECENT_FAILURES);
+    }
+
+    /// Returns true if this denial has NOT been logged recently and should be.
+    pub fn should_log_denial(&self, device_id: &str, topic: &str) -> bool {
+        let key = format!("{device_id}|{topic}");
+        let mut seen = self.denied_seen.lock().unwrap();
+        let now = std::time::Instant::now();
+
+        // Opportunistically evict expired entries
+        if seen.len() >= MAX_DENIAL_CACHE {
+            seen.retain(|_, t| now.duration_since(*t) < DENIAL_DEDUP_TTL);
+        }
+
+        if let Some(t) = seen.get(&key) {
+            if now.duration_since(*t) < DENIAL_DEDUP_TTL {
+                return false;
+            }
+        }
+        seen.insert(key, now);
+        true
     }
 }
 
@@ -149,10 +175,6 @@ async fn handle_connection(
     let _ = send_connack(&mut stream, ConnAckCode::Accepted).await;
     info!("device {device_id} connected");
 
-    // Track denied topics per connection — only log first occurrence.
-    let mut denied_topics: HashSet<String> = HashSet::new();
-    const MAX_DENIED_CACHE: usize = 64;
-
     let (cmd_tx, mut cmd_rx) = mpsc::unbounded_channel::<Packet>();
     {
         let mut subs = command_subscribers.write().await;
@@ -189,8 +211,7 @@ async fn handle_connection(
                     .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
                 if !auth.check_topic_access(&device_id, &publish.topic, false).allowed {
-                    let key = format!("{device_id}|{}", publish.topic);
-                    if denied_topics.len() < MAX_DENIED_CACHE && denied_topics.insert(key) {
+                    if stats.should_log_denial(&device_id, &publish.topic) {
                         warn!("ACL denied PUBLISH from {device_id} to {}", publish.topic);
                     }
                     continue;
