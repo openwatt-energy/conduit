@@ -128,8 +128,8 @@ async function poll(inst,url){
   }catch(e){logLine(inst,"err",""+e);setCardError(inst,"ERR");}
   tick++;if(tick%20===0)document.getElementById("refresh").textContent="auto-refresh 3s";}
 
-setInterval(()=>{poll("prod","/status");poll("test","/test/status");},3000);
-poll("prod","/status");poll("test","/test/status");
+setInterval(()=>{poll("prod","/status");},3000);
+poll("prod","/status");
 
 function switchTab(tab){
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.textContent.toLowerCase().includes(tab)));
