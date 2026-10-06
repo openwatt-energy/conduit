@@ -1,64 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Conduit Health</title>
+<title>Conduit — OpenWatt MQTT</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'><rect width='60' height='60' fill='%230d1117' rx='12'/><path fill='%23a3e635' d='M22 42l9-15-3-1-3 8-4-6 1-1 12-15 10 15-3 1-2-8-4 6 1 1 12 15H22z'/><circle cx='48' cy='14' r='5' fill='%231c1bb4'/></svg>">
 <style>
-:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;margin:0;padding:0}
-body{padding:1.2rem;max-width:1200px;margin:0 auto}
-h1{margin:0 0 .3rem;font-size:1.2rem;color:#f0f6fc}
-h2{font-size:1rem;color:#58a6ff;margin:1.2rem 0 .5rem;padding-bottom:.3rem;border-bottom:1px solid #30363d}
-.tabs{display:flex;gap:.5rem;margin-bottom:1rem}
-.tab{background:#161b22;border:1px solid #30363d;color:#8b949e;padding:.35rem 1rem;border-radius:6px;cursor:pointer;font-size:.8rem;font-family:inherit}
-.tab.active{background:#1f6feb;color:#fff;border-color:#1f6feb}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.6rem}
-.card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:.8rem}
-.card.alert{border-color:#d2991d;background:#1e1a16}
-.card.ok{border-color:#238636}
-.label{font-size:.6rem;color:#8b949e;text-transform:uppercase;letter-spacing:.05em;margin-bottom:1px}
-.value{font-size:1.7rem;font-weight:700;font-variant-numeric:tabular-nums}
-.value.ok{color:#3fb950}.value.warn{color:#d2991d}.value.err{color:#f85149}.value.info{color:#58a6ff}
-.log{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:.6rem;font-family:ui-monospace,monospace;font-size:.7rem;line-height:1.5;max-height:200px;overflow-y:auto;color:#8b949e}
-.log .ts{color:#484f58;margin-right:.4rem}
-.log .ok{color:#3fb950}.log .warn{color:#d2991d}.log .err{color:#f85149}
+:root{color-scheme:dark;--bg:hsl(240 10% 3.9%);--fg:hsl(0 0% 98%);--card:hsl(240 3.7% 15.9%);--border:hsl(240 3.7% 15.9%);--muted:hsl(240 5% 64.9%);--muted-bg:hsl(240 3.7% 15.9%);--primary:#a3e635;--primary-fg:#0b0f0e;--indigo:#1c1bb4;--blue:#60a5fa;--green:#4ade80;--amber:#fbbf24;--red:#f87171;--radius:0.625rem;font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--fg);margin:0;padding:0;-webkit-font-smoothing:antialiased}
+body{padding:1.25rem;max-width:1120px;margin:0 auto}
+.header{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.header svg{flex-shrink:0}
+.header h1{margin:0;font-size:1.25rem;font-weight:700;letter-spacing:-.02em;color:var(--fg)}
+.header h1 span{font-weight:400;color:var(--primary)}
+.header .sub{font-size:.75rem;color:var(--muted);margin-left:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.625rem;margin-bottom:1rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:.85rem;transition:border-color .15s}
+.card.alert{border-color:rgba(251,191,36,.4);background:color-mix(in srgb,var(--card) 95%,var(--amber))}
+.card.ok{border-color:rgba(74,222,128,.3)}
+.label{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;font-weight:500}
+.value{font-size:1.75rem;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em;line-height:1.1}
+.value.ok{color:var(--green)}.value.warn{color:var(--amber)}.value.err{color:var(--red)}.value.info{color:var(--blue)}
+.value.primary{color:var(--primary)}
+.tabs{display:flex;gap:.375rem;margin-bottom:1rem}
+.tab{background:var(--muted-bg);border:1px solid var(--border);color:var(--muted);padding:.35rem 1rem;border-radius:calc(var(--radius) * .75);cursor:pointer;font-size:.75rem;font-family:inherit;font-weight:500;transition:all .15s}
+.tab:hover{color:var(--fg);border-color:var(--muted)}
+.tab.active{background:var(--primary);color:var(--primary-fg);border-color:var(--primary)}
+.panel-title{font-size:.85rem;font-weight:600;color:var(--primary);margin:.75rem 0 .5rem;display:flex;align-items:center;gap:.5rem}
+.panel-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.failures{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:.6rem;max-height:260px;overflow-y:auto;margin-top:.75rem}
+.failures table{width:100%;border-collapse:collapse;font-size:.7rem;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.failures th{text-align:left;color:var(--muted);font-weight:600;padding:.15rem .5rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card)}
+.failures td{padding:.12rem .5rem;color:var(--fg);border-bottom:1px solid hsl(240 3.7% 12%)}
+.failures td.err{color:var(--red)}
+.log{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:.6rem;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.68rem;line-height:1.5;max-height:180px;overflow-y:auto;color:var(--muted);margin-top:.5rem}
+.log .ts{color:hsl(240 3% 35%);margin-right:.35rem}
+.log .ok{color:var(--green)}.log .warn{color:var(--amber)}.log .err{color:var(--red)}
 .hidden{display:none}
-.failures{margin:1rem 0 0;background:#161b22;border:1px solid #30363d;border-radius:8px;padding:.6rem;max-height:260px;overflow-y:auto}
-.failures table{width:100%;border-collapse:collapse;font-size:.72rem;font-family:ui-monospace,monospace}
-.failures th{text-align:left;color:#8b949e;font-weight:600;padding:.2rem .5rem;border-bottom:1px solid #30363d;position:sticky;top:0;background:#161b22}
-.failures td{padding:.15rem .5rem;color:#c9d1d9;border-bottom:1px solid #21262d}
-.failures td.err{color:#f85149}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.status-dot.online{background:var(--green);box-shadow:0 0 6px var(--green)}
+.status-dot.offline{background:var(--red)}
+.refresh{text-align:right;font-size:.65rem;color:var(--muted);margin-top:.5rem}
 </style>
 </head>
 <body>
-<h1>Conduit MQTT <span id="ver"></span></h1>
+
+<header class="header">
+  <svg width="32" height="32" viewBox="0 0 60 60" aria-hidden="true">
+    <rect width="60" height="60" fill="var(--bg)" rx="12"/>
+    <path fill="var(--primary)" d="M38 46c-2 1.6-5.4 3.8-11.3 3.8-2.2 0-8.1-.4-12.7-5.1C9.2 40 9 33.4 9 31.3c0-1.9.3-7 3.4-11.6C14.6 15.6 18.8 11 27 11c6.8 0 11 3 12.8 5 3.5 3.5 5.4 9.4 5.4 14.3 0 5.5-2.4 11.4-6.8 15l-.4.4v.3Zm-4.4-23.4c-.5-.6-1.5-1.9-3.5-2.7-1.5-.6-2.8-.7-3.4-.7-2 0-3.4.7-4 1-3.6 2-4.9 6.5-4.9 10.3 0 4.9 1.5 7.5 3 9 1.6 1.7 3.7 2.6 6 2.6 1.2 0 4-.3 6.2-2.7 2-2.2 2.8-5 2.9-7.9.1-4.5-1.3-7.5-2.3-9h-.1Z"/>
+    <circle cx="52" cy="48" r="5" fill="var(--indigo)"/>
+  </svg>
+  <h1>OpenWatt <span>Conduit</span></h1>
+  <div class="sub" id="live-status"></div>
+</header>
+
 <div class="tabs">
   <button class="tab active" onclick="switchTab('prod')">Production</button>
   <button class="tab" onclick="switchTab('test')">Test</button>
 </div>
-<div id="panel-prod">
-  <h2>Production — openwatt bucket</h2>
-  <div class="grid" id="grid-prod"></div>
-  <div class="failures" id="failures-prod" style="display:none">
-    <div class="label">Recent Auth Failures</div>
-    <table id="failures-table-prod"></table>
-  </div>
-  <pre class="log" id="log-prod"></pre>
-</div>
-<div id="panel-test" class="hidden">
-  <h2>Test — openwatt_test bucket</h2>
-  <div class="grid" id="grid-test"></div>
-  <div class="failures" id="failures-test" style="display:none">
-    <div class="label">Recent Auth Failures</div>
-    <table id="failures-table-test"></table>
-  </div>
-  <pre class="log" id="log-test"></pre>
-</div>
+
+<div id="panel-prod"></div>
+<div id="panel-test" class="hidden"></div>
+
+<div class="refresh" id="refresh"></div>
+
 <script>
 const HOST="", TOKEN="REDACTED_API_TOKEN";
-const fmt=n=>typeof n==="number"?n.toLocaleString():n??"--";
-const uptime=v=>{const h=Math.floor(v/3600),m=Math.floor(v%3600/60),s=v%60;return h+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")};
-
+const fmt=v=>v!=null?v.toLocaleString():"--";
+const uptime=v=>{let h=Math.floor(v/3600),m=Math.floor(v%3600/60),s=v%60;return h+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")};
 const cards={
   connected_devices:{label:"Connected",cls:v=>v>0?"ok":"err",fmt},
   messages_processed:{label:"Messages",cls:()=>"info",fmt},
@@ -67,67 +76,59 @@ const cards={
   influx_flushed:{label:"Flushed",cls:()=>"ok",fmt},
   influx_failed:{label:"Failed",cls:v=>v===0?"ok":"err",fmt},
   registry_entries:{label:"Registry",cls:()=>"info",fmt},
-  uptime_secs:{label:"Uptime",cls:()=>"ok",fmt:uptime}
-};
+  uptime_secs:{label:"Uptime",cls:()=>"ok",fmt:uptime}};
 
-function buildGrid(id){
-  const g=document.getElementById(id);
+function buildPanel(id,title,bucket){
+  const el=document.getElementById(id);
+  el.innerHTML=`<div class="panel-title">${title} <span style="font-size:.7rem;font-weight:400;color:var(--muted)">${bucket}</span></div><div class="grid" id="grid-${id}"></div><div class="failures hidden" id="failures-${id}"><div class="label" style="margin-bottom:.4rem">Recent Auth Failures</div><table id="failures-table-${id}"></table></div><pre class="log" id="log-${id}"></pre>`;
+  const g=document.getElementById(`grid-${id}`);
   for(const[k,c]of Object.entries(cards)){
-    const el=document.createElement("div");el.className="card";el.id="card-"+id+"-"+k;
-    el.innerHTML=`<div class="label">${c.label}</div><div class="value">--</div>`;
-    g.appendChild(el);
-  }
-}
-buildGrid("grid-prod"); buildGrid("grid-test");
+    const d=document.createElement("div");d.className="card";d.id=`card-${id}-${k}`;
+    d.innerHTML=`<div class="label">${c.label}</div><div class="value">--</div>`;g.appendChild(d);}}
 
-let prev={prod:{count:0},test:{count:0}},lines={prod:[],test:[]};
-function logLine(instance,level,msg){
+buildPanel("panel-prod","Production","openwatt bucket");
+buildPanel("panel-test","Test","openwatt_test bucket");
+
+let prev={prod:{count:0},test:{count:0}},lines={prod:[],test:[]},tick=0;
+
+function logLine(inst,level,msg){
   const ts=new Date().toISOString().slice(11,19);
-  lines[instance].unshift(`<span class="ts">${ts}</span> <span class="${level}">${msg}</span>`);
-  if(lines[instance].length>50)lines[instance].pop();
-  document.getElementById("log-"+instance).innerHTML=lines[instance].join("\n");
-}
+  lines[inst].unshift(`<span class="ts">${ts}</span> <span class="${level}">${msg}</span>`);
+  if(lines[inst].length>40)lines[inst].pop();
+  document.getElementById("log-"+inst).innerHTML=lines[inst].join("\n");}
 
-async function pollInstance(instance,url){
+async function poll(inst,url){
   try{
     const r=await fetch(HOST+url,{headers:{Authorization:"Bearer "+TOKEN}});
+    if(!r.ok){logLine(inst,"err",r.status+" "+r.statusText);return}
     const d=await r.json();
-    if(instance==="prod")document.getElementById("ver").textContent="v"+d.version;
-
+    if(inst==="prod")document.getElementById("live-status").innerHTML=
+      `<span class="status-dot ${d.connected_devices>0?'online':'offline'}"></span>${d.connected_devices} online`;
     for(const[k,c]of Object.entries(cards)){
-      const v=d[k],el=document.getElementById("card-"+instance+"-"+k);
-      if(!el)continue;
-      el.querySelector(".value").textContent=c.fmt(v);
-      el.querySelector(".value").className="value "+c.cls(v);
-      el.className="card "+(c.cls(v)==="err"?"alert":c.cls(v)==="ok"?"ok":"");
-    }
+      const v=d[k],el=document.getElementById(`card-${inst}-${k}`);
+      if(!el)continue;const val=el.querySelector(".value");
+      val.textContent=c.fmt(v);val.className="value "+c.cls(v);
+      el.className="card "+(c.cls(v)==="err"?"alert":c.cls(v)==="ok"?"ok":"");}
+    if(d.messages_processed!==prev[inst].count&&prev[inst].count>0){
+      const delta=d.messages_processed-prev[inst].count;
+      logLine(inst,"ok",`+${delta} msgs  conn=${d.connected_devices}  flushed=${d.influx_flushed}  failed=${d.influx_failed}`);}
+    prev[inst]={...d,count:d.messages_processed};
+    const failures=d.recent_auth_failures||[],tbl=document.getElementById("failures-table-"+inst),
+      box=document.getElementById("failures-"+inst);
+    if(failures.length){box.classList.remove("hidden");
+      tbl.innerHTML="<tr><th>Time</th><th>Username</th><th>IP</th></tr>"+failures.map(f=>
+        `<tr><td>${f.timestamp.slice(11,19)}</td><td class="err">${f.username||""}</td><td>${f.ip}</td></tr>`).join("");}
+    else box.classList.add("hidden");
+  }catch(e){logLine(inst,"err",""+e)}
+  tick++;if(tick%20===0)document.getElementById("refresh").textContent="auto-refresh 3s";}
 
-    if(d.messages_processed!==prev[instance].count&&prev[instance].count>0){
-      const delta=d.messages_processed-prev[instance].count;
-      logLine(instance,"ok",`+${delta} msgs — conn=${d.connected_devices} flushed=${d.influx_flushed} failed=${d.influx_failed}`);
-    }
-    prev[instance]={...d,count:d.messages_processed};
-
-    // Render auth failures table
-    const failures=d.recent_auth_failures||[];
-    const tbl=document.getElementById("failures-table-"+instance);
-    const box=document.getElementById("failures-"+instance);
-    if(failures.length){
-      box.style.display="block";
-      tbl.innerHTML="<tr><th>Time</th><th>Username</th><th>IP</th></tr>"+
-        failures.map(f=>`<tr><td>${f.timestamp.slice(11,19)}</td><td class="err">${f.username}</td><td>${f.ip}</td></tr>`).join("");
-    }else{box.style.display="none";}
-  }catch(e){logLine(instance,"err",""+e);}
-}
-
-setInterval(()=>{pollInstance("prod","/status");pollInstance("test","/test/status");},3000);
-pollInstance("prod","/status");pollInstance("test","/test/status");
+setInterval(()=>{poll("prod","/status");poll("test","/test/status");},3000);
+poll("prod","/status");poll("test","/test/status");
 
 function switchTab(tab){
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.textContent.toLowerCase().includes(tab)));
   document.getElementById("panel-prod").classList.toggle("hidden",tab!=="prod");
-  document.getElementById("panel-test").classList.toggle("hidden",tab!=="test");
-}
+  document.getElementById("panel-test").classList.toggle("hidden",tab!=="test");}
 </script>
 </body>
 </html>
