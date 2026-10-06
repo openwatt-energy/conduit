@@ -98,6 +98,11 @@ function logLine(inst,level,msg){
   const el=document.getElementById("log-"+inst);
   if(el)el.innerHTML=lines[inst].join("\n");}
 
+function setCardError(inst,msg){
+  for(const k of Object.keys(cards)){
+    const el=document.getElementById(`card-${inst}-${k}`);
+    if(el)el.querySelector(".value").textContent=msg;}}
+
 async function poll(inst,url){
   try{
     const r=await fetch(HOST+url,{headers:{Authorization:"Bearer "+TOKEN}});
@@ -120,7 +125,7 @@ async function poll(inst,url){
       tbl.innerHTML="<tr><th>Time</th><th>Username</th><th>IP</th></tr>"+failures.map(f=>
         `<tr><td>${f.timestamp.slice(11,19)}</td><td class="err">${f.username||""}</td><td>${f.ip}</td></tr>`).join("");}
     else box.classList.add("hidden");
-  }catch(e){logLine(inst,"err",""+e)}
+  }catch(e){logLine(inst,"err",""+e);setCardError(inst,"ERR");}
   tick++;if(tick%20===0)document.getElementById("refresh").textContent="auto-refresh 3s";}
 
 setInterval(()=>{poll("prod","/status");poll("test","/test/status");},3000);
