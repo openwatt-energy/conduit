@@ -134,7 +134,11 @@ fn json_value_to_field(val: &serde_json::Value, field_type: &str) -> Option<Fiel
         "float" => val.as_f64().map(FieldValue::Float).or_else(|| {
             val.as_i64().map(|i| FieldValue::Float(i as f64))
         }),
-        "string" => val.as_str().map(|s| FieldValue::String(s.to_string())),
+        "string" => val.as_str().map(|s| FieldValue::String(s.to_string())).or_else(|| {
+            // Coerce integer to string for fields like wifi_rssi that
+            // started as string in the legacy InfluxDB schema.
+            val.as_i64().map(|i| FieldValue::String(i.to_string()))
+        }),
         "boolean" => val.as_bool().map(FieldValue::Boolean),
         _ => val.as_f64().map(FieldValue::Float),
     }
