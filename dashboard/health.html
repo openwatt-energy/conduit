@@ -24,6 +24,7 @@ body{padding:1.25rem;max-width:1120px;margin:0 auto}
 .tab{background:var(--muted-bg);border:1px solid var(--border);color:var(--muted);padding:.35rem 1rem;border-radius:calc(var(--radius) * .75);cursor:pointer;font-size:.75rem;font-family:inherit;font-weight:500;transition:all .15s}
 .tab:hover{color:var(--fg);border-color:var(--muted)}
 .tab.active{background:var(--primary);color:var(--primary-fg);border-color:var(--primary)}
+.hero-logo{text-align:center;padding:.5rem 0 .75rem;opacity:.9}
 .panel-title{font-size:.85rem;font-weight:600;color:var(--primary);margin:0 0 .5rem;display:flex;align-items:center;gap:.5rem}
 .panel-title::after{content:'';flex:1;height:1px;background:var(--border)}
 .failures{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:.6rem;max-height:260px;overflow-y:auto;margin-top:.75rem}
@@ -68,6 +69,34 @@ body{padding:1.25rem;max-width:1120px;margin:0 auto}
   <div class="sub" id="live-status"></div>
 </header>
 
+<div class="hero-logo">
+  <svg width="96" height="96" viewBox="0 0 100 100" aria-hidden="true">
+    <defs>
+      <linearGradient id="hg" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#a3e635"/>
+        <stop offset="100%" stop-color="#60a5fa"/>
+      </linearGradient>
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="2" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <!-- conduit pipe body -->
+    <rect x="8" y="42" width="72" height="16" rx="8" fill="none" stroke="url(#hg)" stroke-width="3"/>
+    <rect x="72" y="28" width="6" height="44" rx="3" fill="none" stroke="url(#hg)" stroke-width="3"/>
+    <!-- bolt inside conduit -->
+    <path fill="#a3e635" d="M28 64l10-16-3-1-4 9-5-6 1-1 13-16 11 16-3 1-2-9-5 6 1 1 13 16H28Z" filter="url(#glow)"/>
+    <!-- data dots -->
+    <circle cx="18" cy="50" r="3.5" fill="#a3e635" opacity=".8"/>
+    <circle cx="30" cy="50" r="3.5" fill="#a3e635" opacity=".6"/>
+    <circle cx="60" cy="50" r="3.5" fill="#60a5fa" opacity=".7"/>
+    <circle cx="80" cy="50" r="3.5" fill="#60a5fa" opacity=".8"/>
+    <circle cx="80" cy="62" r="3.5" fill="#60a5fa" opacity=".5"/>
+    <!-- pulse ring + indigo dot -->
+    <circle cx="78" cy="28" r="18" fill="none" stroke="#1c1bb4" stroke-width="2" stroke-dasharray="5 5"/>
+    <circle cx="78" cy="28" r="6" fill="#1c1bb4" filter="url(#glow)"/>
+  </svg>
+</div>
 <div class="tabs">
   <button class="tab active" onclick="switchTab('prod')">Production</button>
   <button class="tab" onclick="switchTab('test')">Test</button>
