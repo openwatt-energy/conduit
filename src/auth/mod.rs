@@ -6,6 +6,7 @@ use crate::mqtt::protocol::Connect;
 use crate::auth::static_devices::StaticDeviceAuth;
 use crate::auth::registry::DeviceEntry;
 use base64::Engine;
+use tracing::warn;
 
 #[derive(Debug, Clone)]
 pub struct AclResult {
@@ -91,17 +92,31 @@ impl AuthProvider for PasswordAuth {
 
         let entry = registry
             .iter()
-            .find(|e| e.dongle == *username)
-            .ok_or(AuthError::UnknownDevice)?;
+            .find(|e| e.dongle == *username);
 
-        if entry.auth != "openwatt_salt_v1" {
-            return Err(AuthError::InvalidCredentials);
-        }
-
-        if self.verify_password(username, password) {
-            Ok(username.clone())
-        } else {
-            Err(AuthError::InvalidCredentials)
+        match entry {
+            Some(entry) if entry.auth == "openwatt_salt_v1" => {
+                if self.verify_password(username, password) {
+                    return Ok(username.clone());
+                }
+                return Err(AuthError::InvalidCredentials);
+            }
+            Some(_) => {
+                return Err(AuthError::InvalidCredentials);
+            }
+            None => {
+                // Fallback: device not in registry — verify password anyway.
+                // Genuine P1M5 dongles share the same SALT_STRING, so they
+                // produce a valid hash even without a registry entry.
+                if username.len() == 8
+                    && username.starts_with("P1")
+                    && self.verify_password(username, password)
+                {
+                    warn!("unregistered device accepted via fallback: {username}");
+                    return Ok(username.clone());
+                }
+                return Err(AuthError::UnknownDevice);
+            }
         }
     }
 
@@ -124,6 +139,9 @@ impl AuthProvider for PasswordAuth {
                     }
                 }
             }
+            // Fallback: no registry entry — derive p1m5_ prefix from client_id
+            warn!("no registry entry for ow_id resolution: {client_id}");
+            return format!("p1m5_{}", client_id.to_lowercase());
         }
         // P1M5_<MAC> format: return ow_<MAC>
         if let Some(mac) = client_id.strip_prefix("P1M5_") {
