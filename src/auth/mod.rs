@@ -140,7 +140,6 @@ impl AuthProvider for PasswordAuth {
                 }
             }
             // Fallback: no registry entry — derive p1m5_ prefix from client_id
-            warn!("no registry entry for ow_id resolution: {client_id}");
             return format!("p1m5_{}", client_id.to_lowercase());
         }
         // P1M5_<MAC> format: return ow_<MAC>

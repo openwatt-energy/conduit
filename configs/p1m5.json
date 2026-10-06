@@ -33,7 +33,7 @@
           "fw_ver": { "name": "fw_version", "type": "string" },
           "uptime": { "name": "uptime", "type": "integer" },
           "reboots": { "name": "reboots", "type": "integer" },
-          "wifi_rssi": { "name": "wifi_rssi", "type": "integer" },
+          "wifi_rssi": { "name": "wifi_rssi", "type": "string" },
           "wifi_ssid": { "name": "wifi_ssid", "type": "string" },
           "dongle_ip": { "name": "dongle_ip", "type": "string" },
           "mqtt_host": { "name": "mqtt_host", "type": "string" },
