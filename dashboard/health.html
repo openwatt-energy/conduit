@@ -3,31 +3,45 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <title>Conduit — OpenWatt MQTT</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'><rect width='60' height='60' fill='%230d1117' rx='12'/><path fill='%23a3e635' d='M22 42l9-15-3-1-3 8-4-6 1-1 12-15 10 15-3 1-2-8-4 6 1 1 12 15H22z'/><circle cx='48' cy='14' r='5' fill='%231c1bb4'/></svg>">
 <style>
 :root{color-scheme:dark;--bg:hsl(240 10% 3.9%);--fg:hsl(0 0% 98%);--card:hsl(240 3.7% 15.9%);--border:hsl(240 3.7% 15.9%);--muted:hsl(240 5% 64.9%);--muted-bg:hsl(240 3.7% 15.9%);--primary:#a3e635;--primary-fg:#0b0f0e;--indigo:#1c1bb4;--blue:#60a5fa;--green:#4ade80;--amber:#fbbf24;--red:#f87171;--radius:0.625rem;font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--fg);margin:0;padding:0}
 body{padding:1.25rem;max-width:1120px;margin:0 auto}
-.header{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.header{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
 .header svg{flex-shrink:0}
 .header h1{margin:0;font-size:1.25rem;font-weight:700;letter-spacing:-.02em;color:var(--fg)}
 .header h1 span{font-weight:400;color:var(--primary)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.625rem;margin-bottom:.75rem}
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:.85rem}
+.header .sub{font-size:.75rem;color:var(--muted);margin-left:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.625rem;margin-bottom:1rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:.85rem;transition:border-color .15s}
 .card.alert{border-color:rgba(251,191,36,.4);background:#1e1b12}
 .card.ok{border-color:rgba(74,222,128,.3)}
 .label{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;font-weight:500}
-.value{font-size:1.75rem;font-weight:700;letter-spacing:-.01em;line-height:1.1}
+.value{font-size:1.75rem;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em;line-height:1.1}
 .value.ok{color:var(--green)}.value.warn{color:var(--amber)}.value.err{color:var(--red)}.value.info{color:var(--blue)}
-.panel-title{font-size:.85rem;font-weight:600;color:var(--primary);margin:.25rem 0 .5rem;display:flex;align-items:center;gap:.5rem}
+.tabs{display:flex;gap:.375rem;margin-bottom:1rem}
+.tab{background:var(--muted-bg);border:1px solid var(--border);color:var(--muted);padding:.35rem 1rem;border-radius:calc(var(--radius) * .75);cursor:pointer;font-size:.75rem;font-family:inherit;font-weight:500;transition:all .15s}
+.tab:hover{color:var(--fg);border-color:var(--muted)}
+.tab.active{background:var(--primary);color:var(--primary-fg);border-color:var(--primary)}
+.panel-title{font-size:.85rem;font-weight:600;color:var(--primary);margin:0 0 .5rem;display:flex;align-items:center;gap:.5rem}
 .panel-title::after{content:'';flex:1;height:1px;background:var(--border)}
-.debug{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.68rem;color:var(--muted);margin-top:.5rem;padding:.5rem;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:300px;overflow-y:auto;white-space:pre-wrap}
+.failures{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:.6rem;max-height:260px;overflow-y:auto;margin-top:.75rem}
+.failures table{width:100%;border-collapse:collapse;font-size:.7rem;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.failures th{text-align:left;color:var(--muted);font-weight:600;padding:.15rem .5rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card)}
+.failures td{padding:.12rem .5rem;color:var(--fg);border-bottom:1px solid hsl(240 3.7% 12%)}
+.failures td.err{color:var(--red)}
+.log{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:.6rem;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.68rem;line-height:1.5;max-height:180px;overflow-y:auto;color:var(--muted);margin-top:.5rem}
+.log .ts{color:hsl(240 3% 35%);margin-right:.35rem}
+.log .ok{color:var(--green)}.log .warn{color:var(--amber)}.log .err{color:var(--red)}
+.hidden{display:none}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.status-dot.online{background:var(--green);box-shadow:0 0 6px var(--green)}
+.status-dot.offline{background:var(--red)}
 </style>
 </head>
 <body>
+
 <header class="header">
   <svg width="32" height="32" viewBox="0 0 60 60" aria-hidden="true">
     <rect width="60" height="60" fill="#0d1117" rx="12"/>
@@ -35,12 +49,32 @@ body{padding:1.25rem;max-width:1120px;margin:0 auto}
     <circle cx="52" cy="48" r="5" fill="#1c1bb4"/>
   </svg>
   <h1>OpenWatt <span>Conduit</span></h1>
-  <span id="live-status" style="font-size:.75rem;color:var(--muted);margin-left:auto"></span>
+  <div class="sub" id="live-status"></div>
 </header>
 
-<div class="panel-title">Production — openwatt bucket</div>
-<div class="grid" id="grid"></div>
-<div class="debug" id="log"></div>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('prod')">Production</button>
+  <button class="tab" onclick="switchTab('test')">Test</button>
+</div>
+
+<div id="panel-prod">
+  <div class="panel-title">Production — openwatt bucket</div>
+  <div class="grid" id="grid-prod"></div>
+  <div class="failures hidden" id="failures-prod">
+    <div class="label" style="margin-bottom:.4rem">Recent Auth Failures</div>
+    <table id="failures-table-prod"></table>
+  </div>
+  <pre class="log" id="log-prod"></pre>
+</div>
+<div id="panel-test" class="hidden">
+  <div class="panel-title">Test — openwatt_test bucket</div>
+  <div class="grid" id="grid-test"></div>
+  <div class="failures hidden" id="failures-test">
+    <div class="label" style="margin-bottom:.4rem">Recent Auth Failures</div>
+    <table id="failures-test"></table>
+  </div>
+  <pre class="log" id="log-test"></pre>
+</div>
 
 <script>
 var TOKEN="REDACTED_API_TOKEN";
@@ -55,51 +89,69 @@ var cards={
   influx_failed:{label:"Failed",cls:function(v){return v===0?"ok":"err";},fmt:fmt},
   registry_entries:{label:"Registry",cls:function(){return"info";},fmt:fmt},
   uptime_secs:{label:"Uptime",cls:function(){return"ok";},fmt:uptime}};
-
-var grid=document.getElementById("grid");
 var keys=Object.keys(cards);
-for(var i=0;i<keys.length;i++){
-  var k=keys[i],c=cards[k];
-  var d=document.createElement("div");d.className="card";d.id="card-"+k;
-  d.innerHTML='<div class="label">'+c.label+'</div><div class="value">--</div>';
-  grid.appendChild(d);
+var prev={prod:{count:0},test:{count:0}},lines={prod:[],test:[]};
+
+function buildGrid(inst){
+  var g=document.getElementById("grid-"+inst);
+  for(var i=0;i<keys.length;i++){
+    var k=keys[i],c=cards[k],d=document.createElement("div");
+    d.className="card";d.id="card-"+inst+"-"+k;
+    d.innerHTML='<div class="label">'+c.label+'</div><div class="value">--</div>';
+    g.appendChild(d);
+  }
+}
+buildGrid("prod");buildGrid("test");
+
+function logLine(inst,level,msg){
+  var ts=new Date().toISOString().slice(11,19);
+  lines[inst].unshift('<span class="ts">'+ts+'</span> <span class="'+level+'">'+msg+'</span>');
+  if(lines[inst].length>40)lines[inst].pop();
+  var el=document.getElementById("log-"+inst);
+  if(el)el.innerHTML=lines[inst].join("\n");
 }
 
-var lines=[];
-function log(msg){lines.unshift("[LOG] "+msg);if(lines.length>30)lines.pop();document.getElementById("log").textContent=lines.join("\n");}
-
-function poll(){
-  log("fetching /status...");
+function poll(inst,url){
   var x=new XMLHttpRequest();
-  x.open("GET","/status",true);
+  x.open("GET",url,true);
   x.setRequestHeader("Authorization","Bearer "+TOKEN);
-  x.onload=function(){
-    log("XHR status: "+x.status+" len: "+x.responseText.length);
-    if(x.status===200){
-      try{
-        var d=JSON.parse(x.responseText);
-        log("parsed OK, conn: "+d.connected_devices);
-        document.getElementById("live-status").innerHTML='<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:'+(d.connected_devices>0?'#4ade80':'#f87171')+';box-shadow:0 0 6px '+(d.connected_devices>0?'#4ade80':'#f87171')+'"></span>'+d.connected_devices+' online';
-        for(var i=0;i<keys.length;i++){
-          var k=keys[i],v=d[k],c=cards[k];
-          var el=document.getElementById("card-"+k);
-          if(el){
-            el.querySelector(".value").textContent=c.fmt(v);
-            el.querySelector(".value").className="value "+c.cls(v);
-            el.className="card "+(c.cls(v)==="err"?"alert":c.cls(v)==="ok"?"ok":"");
-          }
-        }
-      }catch(e){log("parse error: "+e);}
-    }else{log("HTTP error: "+x.status);}
-  };
-  x.onerror=function(){log("XHR network error");};
-  x.ontimeout=function(){log("XHR timeout");};
   x.timeout=10000;
+  x.onload=function(){
+    if(x.status!==200){logLine(inst,"err",x.status+" "+x.statusText);return}
+    try{var d=JSON.parse(x.responseText);}catch(e){return}
+    if(inst==="prod")document.getElementById("live-status").innerHTML='<span class="status-dot '+(d.connected_devices>0?"online":"offline")+'"></span>'+d.connected_devices+' online';
+    for(var i=0;i<keys.length;i++){
+      var k=keys[i],v=d[k],c=cards[k],el=document.getElementById("card-"+inst+"-"+k);
+      if(!el)continue;
+      el.querySelector(".value").textContent=c.fmt(v);
+      el.querySelector(".value").className="value "+c.cls(v);
+      el.className="card "+(c.cls(v)==="err"?"alert":c.cls(v)==="ok"?"ok":"");
+    }
+    if(d.messages_processed!==prev[inst].count&&prev[inst].count>0){
+      var delta=d.messages_processed-prev[inst].count;
+      logLine(inst,"ok","+"+delta+" msgs  conn="+d.connected_devices+"  flushed="+d.influx_flushed+"  failed="+d.influx_failed);
+    }
+    prev[inst]={count:d.messages_processed};
+    var failures=d.recent_auth_failures||[],tbl=document.getElementById("failures-table-"+inst),
+      box=document.getElementById("failures-"+inst);
+    if(failures.length){box.classList.remove("hidden");
+      tbl.innerHTML="<tr><th>Time</th><th>Username</th><th>IP</th></tr>"+failures.map(function(f){
+        return "<tr><td>"+f.timestamp.slice(11,19)+"</td><td class=\"err\">"+(f.username||"")+"</td><td>"+f.ip+"</td></tr>";}).join("");}
+    else box.classList.add("hidden");
+  };
+  x.onerror=function(){logLine(inst,"err","network error");};
   x.send();
 }
 
-poll();
-setInterval(poll,3000);
+setInterval(function(){poll("prod","/status");},3000);
+poll("prod","/status");
+
+function switchTab(tab){
+  var tabs=document.querySelectorAll(".tab");
+  for(var i=0;i<tabs.length;i++)tabs[i].classList.toggle("active",tabs[i].textContent.toLowerCase().indexOf(tab)>-1);
+  document.getElementById("panel-prod").classList.toggle("hidden",tab!=="prod");
+  document.getElementById("panel-test").classList.toggle("hidden",tab!=="test");
+}
 </script>
 </body>
 </html>
