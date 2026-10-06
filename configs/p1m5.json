@@ -30,7 +30,7 @@
       },
       "sys/config": {
         "fields": {
-          "fw_ver": { "name": "fw_version", "type": "string" },
+          "fw_ver": { "name": "fw", "type": "string" },
           "uptime": { "name": "uptime", "type": "integer" },
           "reboots": { "name": "reboots", "type": "integer" },
           "wifi_rssi": { "name": "wifi_rssi", "type": "string" },
