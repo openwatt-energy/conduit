@@ -95,7 +95,8 @@ function logLine(inst,level,msg){
   const ts=new Date().toISOString().slice(11,19);
   lines[inst].unshift(`<span class="ts">${ts}</span> <span class="${level}">${msg}</span>`);
   if(lines[inst].length>40)lines[inst].pop();
-  document.getElementById("log-"+inst).innerHTML=lines[inst].join("\n");}
+  const el=document.getElementById("log-"+inst);
+  if(el)el.innerHTML=lines[inst].join("\n");}
 
 async function poll(inst,url){
   try{
