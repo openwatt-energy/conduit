@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Conduit — OpenWatt MQTT Broker</title>
+<style>
+:root{color-scheme:dark;--bg:hsl(240 10% 3.9%);--fg:hsl(0 0% 98%);--card:hsl(240 3.7% 15.9%);--border:hsl(240 3.7% 15.9%);--muted:hsl(240 5% 64.9%);--muted-bg:hsl(240 3.7% 15.9%);--primary:#a3e635;--primary-fg:#0b0f0e;--indigo:#1c1bb4;--blue:#60a5fa;--green:#4ade80;--amber:#fbbf24;--red:#f87171;--radius:0.625rem;font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--fg);margin:0;padding:0;-webkit-font-smoothing:antialiased}
+body{max-width:960px;margin:0 auto;padding:2rem 1.5rem 4rem}
+.hero{display:flex;align-items:center;gap:1.5rem;margin-bottom:3rem;padding-bottom:2rem;border-bottom:1px solid var(--border)}
+.hero svg{flex-shrink:0}
+.hero-text h1{margin:0 0 .5rem;font-size:2.25rem;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.hero-text h1 span{color:var(--primary)}
+.hero-text .tagline{font-size:1.05rem;color:var(--muted);line-height:1.5;max-width:520px}
+.hero-text .tagline strong{color:var(--fg)}
+.stats{display:flex;gap:2rem;margin:1.5rem 0}
+.stat .num{font-size:1.5rem;font-weight:700;color:var(--primary);font-variant-numeric:tabular-nums}
+.stat .label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+h2{font-size:1.1rem;font-weight:700;color:var(--primary);margin:2.5rem 0 1rem;letter-spacing:-.01em}
+h2::before{content:'// ';color:var(--muted);font-weight:400}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.75rem;margin-bottom:2rem}
+.feature{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem}
+.feature .icon{font-size:1.5rem;margin-bottom:.5rem}
+.feature h3{margin:0 0 .4rem;font-size:.95rem;font-weight:600;color:var(--fg)}
+.feature p{margin:0;font-size:.8rem;color:var(--muted);line-height:1.6}
+.feature.highlight{border-color:rgba(163,230,53,.25);background:linear-gradient(135deg,var(--card),color-mix(in srgb,var(--primary) 5%,var(--card)))}
+.feature .tag{display:inline-block;background:var(--primary);color:var(--primary-fg);font-size:.6rem;font-weight:600;padding:.15rem .5rem;border-radius:4px;margin-left:.5rem;text-transform:uppercase;vertical-align:middle}
+.compare{margin:2.5rem 0}
+.compare table{width:100%;border-collapse:collapse;font-size:.8rem}
+.compare th,.compare td{padding:.6rem .8rem;text-align:left;border-bottom:1px solid var(--border)}
+.compare th{color:var(--muted);font-weight:600;text-transform:uppercase;font-size:.65rem;letter-spacing:.06em}
+.compare td:first-child{font-weight:500;color:var(--fg)}
+.compare td:last-child{color:var(--fg)}
+.compare .win{color:var(--green);font-weight:600}
+.compare .tie{color:var(--amber)}
+.cta{text-align:center;margin:3rem 0 2rem;padding:2rem;background:var(--card);border:1px solid var(--border);border-radius:var(--radius)}
+.cta p{font-size:.85rem;color:var(--muted);margin:0 0 1rem}
+.cta code{background:var(--muted-bg);padding:.2rem .4rem;border-radius:4px;font-size:.8rem;color:var(--primary)}
+.footer{text-align:center;font-size:.7rem;color:hsl(240 3% 35%);margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border)}
+.footer a{color:var(--muted);text-decoration:none}
+.footer a:hover{color:var(--primary)}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <!-- Hexagon conduit icon -->
+  <svg width="96" height="96" viewBox="0 0 160 160" aria-hidden="true">
+    <polygon points="80,15 132,45 132,105 80,135 28,105 28,45" fill="#0d1117" stroke="hsl(240,3.7%,15.9%)" stroke-width="3" stroke-linejoin="round"/>
+    <circle cx="80" cy="15" r="2.5" fill="hsl(240,5%,65%)"/><circle cx="132" cy="45" r="2.5" fill="hsl(240,5%,65%)"/>
+    <circle cx="132" cy="105" r="2.5" fill="hsl(240,5%,65%)"/><circle cx="80" cy="135" r="2.5" fill="hsl(240,5%,65%)"/>
+    <circle cx="28" cy="105" r="2.5" fill="hsl(240,5%,65%)"/><circle cx="28" cy="45" r="2.5" fill="hsl(240,5%,65%)"/>
+    <path d="M 28,75 L 55,75 L 68,100 L 92,50 L 105,75 L 132,75" fill="none" stroke="#1c1bb4" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 28,75 L 55,75 L 68,100 L 92,50 L 105,75 L 132,75" fill="none" stroke="#a3e635" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="55" cy="75" r="4.5" fill="#0d1117" stroke="#4ade80" stroke-width="2.5"/>
+    <circle cx="68" cy="100" r="4.5" fill="#0d1117" stroke="#4ade80" stroke-width="2.5"/>
+    <circle cx="92" cy="50" r="4.5" fill="#0d1117" stroke="#4ade80" stroke-width="2.5"/>
+    <circle cx="105" cy="75" r="4.5" fill="#0d1117" stroke="#4ade80" stroke-width="2.5"/>
+  </svg>
+  <div class="hero-text">
+    <h1>OpenWatt <span>Conduit</span></h1>
+    <p class="tagline">A <strong>Rust MQTT broker</strong> purpose-built for smart meter telemetry. <br>Authenticates, parses, and writes directly to InfluxDB — <br>no intermediate APIs, no message queues, no overhead.</p>
+    <div class="stats">
+      <div class="stat"><div class="num">~600</div><div class="label">Active dongles</div></div>
+      <div class="stat"><div class="num">11 MB</div><div class="label">Binary size</div></div>
+      <div class="stat"><div class="num">&lt;50 ms</div><div class="label">Parse latency</div></div>
+      <div class="stat"><div class="num">30 MB</div><div class="label">Memory (idle)</div></div>
+    </div>
+  </div>
+</div>
+
+<h2>What makes Conduit different</h2>
+
+<div class="grid">
+  <div class="feature highlight">
+    <div class="icon">&#9889;</div>
+    <h3>Dynamic credential loading</h3>
+    <p>Device registry fetched from the OpenWatt backend API on startup and reloaded every 5 minutes. <strong>Add a dongle to the platform and it authenticates automatically — no restarts, no credential file edits.</strong> Supports P1M5 v1.0.47+, SmartStuff, and 1st-gen devices with hardcoded fallback credentials.</p>
+  </div>
+
+  <div class="feature highlight">
+    <div class="icon">&#128640;</div>
+    <h3>Direct InfluxDB writes <span class="tag">speed</span></h3>
+    <p>Telemetry data is parsed and written straight to InfluxDB with <strong>no intermediate REST API</strong>. The legacy stack required MQTT → mqtt2api → API → InfluxDB. Conduit collapses the entire pipeline into a single process. <strong>Zero network hops between parse and write.</strong></p>
+  </div>
+
+  <div class="feature">
+    <div class="icon">&#9881;</div>
+    <h3>Config-driven field mapping</h3>
+    <p>P1M5 and SmartStuff field mappings live in <code>configs/p1m5.json</code> and <code>configs/smartstuff.json</code>. <strong>Add a new meter field without a single line of Rust</strong> — just add the OBIS code, target name, type, and optional scale factor. Compiled into the binary at build time for zero runtime overhead.</p>
+  </div>
+
+  <div class="feature">
+    <div class="icon">&#9961;</div>
+    <h3>Multi-protocol parser</h3>
+    <p>Handles <strong>three telemetry formats simultaneously</strong>: raw DSMR text (legacy dongles), JSON from v1.0.47+ firmware, and SmartStuff/BEPR JSON. Auto-detection by topic prefix and payload type. All parsed through the same pipeline into a unified InfluxDB schema.</p>
+  </div>
+
+  <div class="feature">
+    <div class="icon">&#128274;</div>
+    <h3>Layered authentication</h3>
+    <p>Attempts <strong>static device auth first</strong> (1st-gen devices with plain passwords), then falls back to <strong>SHA256-based auth</strong> (P1M5 firmware). Unknown P1M5 devices that pass password verification are accepted via fallback — <strong>dongles never get locked out</strong> while the registry sync catches up.</p>
+  </div>
+
+  <div class="feature">
+    <div class="icon">&#128221;</div>
+    <h3>Built-in observability</h3>
+    <p>Live <strong>health dashboard</strong> with real-time connection counts, auth failure tracking, parse error rates, and InfluxDB throughput. <strong>GCP Cloud Monitoring alerts</strong> on dongle count, auth failures, and write errors. Docker log rotation caps disk usage at 60 MB.</p>
+  </div>
+</div>
+
+<h2>Conduit vs the legacy stack</h2>
+
+<div class="compare">
+  <table>
+    <tr><th></th><th>Legacy (Mosquitto + mqtt2api)</th><th>Conduit</th></tr>
+    <tr><td>Language</td><td>Python (mqtt2api) + C (Mosquitto)</td><td class="win">Rust</td></tr>
+    <tr><td>Binary size</td><td>~500 MB (Docker image)</td><td class="win">11 MB binary + 90 MB image</td></tr>
+    <tr><td>Memory (idle)</td><td>~200 MB</td><td class="win">~30 MB</td></tr>
+    <tr><td>Data path</td><td>MQTT → mqtt2api → API → InfluxDB</td><td class="win">MQTT → InfluxDB</td></tr>
+    <tr><td>Parse latency</td><td>~50 ms per message</td><td class="win">&lt;1 ms per message</td></tr>
+    <tr><td>Credential changes</td><td>Edit password file, restart Mosquitto</td><td class="win">Auto-reload from API every 5 min</td></tr>
+    <tr><td>New fields</td><td>Edit Python code, redeploy</td><td class="win">Edit JSON config, rebuild (~20s)</td></tr>
+    <tr><td>Log rotation</td><td>Manual</td><td class="win">Automatic (10 MB × 3)</td></tr>
+    <tr><td>Auth failures visible</td><td>Mosquitto logs</td><td class="win">Dashboard + Cloud Monitoring alerts</td></tr>
+    <tr><td>Parse errors visible</td><td>mqtt2api logs</td><td class="win">Dashboard + Cloud Monitoring alerts</td></tr>
+  </table>
+</div>
+
+<div class="cta">
+  <p>Conduit is running in production at <code>conduit.openwatt.eu</code>, handling <strong>~600 dongles</strong> publishing every 5–10 seconds with zero data loss.</p>
+  <p><a href="/" style="color:var(--primary);font-weight:600">View the live dashboard →</a></p>
+</div>
+
+<div class="footer">
+  <a href="https://gitlab.com/openwatt/conduit">GitLab</a> &middot;
+  <a href="/">Dashboard</a> &middot;
+  Built in Rust &middot; OpenWatt EMS
+</div>
+
+</body>
+</html>
