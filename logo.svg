@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <polygon points="80,15 132,45 132,105 80,135 28,105 28,45" fill="#0d1117" stroke="#262a30" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="80" cy="15" r="2.5" fill="#8b949e"/>
+  <circle cx="132" cy="45" r="2.5" fill="#8b949e"/>
+  <circle cx="132" cy="105" r="2.5" fill="#8b949e"/>
+  <circle cx="80" cy="135" r="2.5" fill="#8b949e"/>
+  <circle cx="28" cy="105" r="2.5" fill="#8b949e"/>
+  <circle cx="28" cy="45" r="2.5" fill="#8b949e"/>
+  <path d="M 28,75 L 55,75 L 68,100 L 92,50 L 105,75 L 132,75" fill="none" stroke="#1c1bb4" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 28,75 L 55,75 L 68,100 L 92,50 L 105,75 L 132,75" fill="none" stroke="#a3e635" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="55" cy="75" r="4.5" fill="#0d1117" stroke="#4ade80" stroke-width="2.5"/>
+  <circle cx="68" cy="100" r="4.5" fill="#0d1117" stroke="#4ade80" stroke-width="2.5"/>
+  <circle cx="92" cy="50" r="4.5" fill="#0d1117" stroke="#4ade80" stroke-width="2.5"/>
+  <circle cx="105" cy="75" r="4.5" fill="#0d1117" stroke="#4ade80" stroke-width="2.5"/>
+</svg>
