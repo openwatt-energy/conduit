@@ -1,2 +1,4 @@
 /target
 deploy/gke/secret.yaml
+prod.env
+test.env

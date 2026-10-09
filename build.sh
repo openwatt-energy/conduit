@@ -3,7 +3,7 @@
 # First build: ~4 min (deps) + ~2 min (compile).  Subsequent: ~30s.
 set -e
 
-IMAGE="europe-west1-docker.pkg.dev/powertrader-399210/conduit/conduitd:latest"
+IMAGE="${IMAGE:-conduitd:latest}"
 
 echo "Pulling previous image for layer cache..."
 docker pull "$IMAGE" 2>/dev/null || echo "(no previous image, full build)"

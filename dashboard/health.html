@@ -103,7 +103,7 @@ body{padding:1.25rem;max-width:1120px;margin:0 auto}
 </div>
 
 <script>
-var TOKEN="REDACTED_API_TOKEN";
+var TOKEN = (location.search.match(/token=([^&]+)/) || [])[1] || 'CHANGE_ME';
 var fmt=function(v){return v!=null?v.toLocaleString():"--";};
 var uptime=function(v){var h=Math.floor(v/3600),m=Math.floor(v%3600/60),s=v%60;return h+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");};
 var cards={
