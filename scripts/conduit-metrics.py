@@ -8,6 +8,8 @@ import urllib.request
 TOKEN = os.environ.get("CONDUIT_API_TOKEN", "")
 STATUS_URL = os.environ.get("CONDUIT_STATUS_URL", "http://127.0.0.1:9091/status")
 INTERVAL = int(os.environ.get("METRICS_INTERVAL", "60"))
+GCP_PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "your-project-id")
+GCP_LOCATION = os.environ.get("GCP_LOCATION", "europe-west1-b")
 
 METRICS = {
     "connected_devices": {"name": "connections", "type": "gauge"},
@@ -61,8 +63,8 @@ def push_metrics(data, gcp_token):
             "resource": {
                 "type": "generic_task",
                 "labels": {
-                    "project_id": "REDACTED_PROJECT_ID",
-                    "location": "europe-west1-b",
+                    "project_id": GCP_PROJECT_ID,
+                    "location": GCP_LOCATION,
                     "namespace": "openwatt",
                     "job": "conduit",
                     "task_id": "conduit-vm",
@@ -78,7 +80,7 @@ def push_metrics(data, gcp_token):
 
     body = json.dumps({"timeSeries": series}).encode()
     req = urllib.request.Request(
-        f"https://monitoring.googleapis.com/v3/projects/REDACTED_PROJECT_ID/timeSeries",
+        f"https://monitoring.googleapis.com/v3/projects/{GCP_PROJECT_ID}/timeSeries",
         data=body, method="POST",
         headers={
             "Authorization": f"Bearer {gcp_token}",

@@ -4,7 +4,7 @@ Rust MQTT broker replacing Mosquitto for the OpenWatt EMS. Authenticates
 P1M5, SmartStuff, and 1st-gen dongles, parses JSON and DSMR telemetry,
 and writes directly to InfluxDB.
 
-Runs on the `conduit` GCE VM at `conduit.openwatt.eu`.
+Runs on a lightweight VM (e.g. GCE COS) or any container host.
 
 ## Quick deploy
 
@@ -68,7 +68,7 @@ Key env vars (see `prod.env` / `test.env` for full list):
 ## Health dashboard
 
 ```
-http://conduit.openwatt.eu:9090/
+http://localhost:9090/
 ```
 
 Shows real-time metrics (8 cards), recent auth failures table, and prod/test
@@ -84,10 +84,10 @@ tabs switching between instances.
 | `POST /admin/reload` | Bearer | Reload device registry from backend |
 | `GET /admin/clients` | Bearer | All authorized devices |
 
-Token: `REDACTED_API_TOKEN`
+Token: set via `CONDUIT_API_ADMIN_TOKEN` env var (see `.env.example`).
 
 ```bash
-curl -H "Authorization: Bearer <token>" http://conduit.openwatt.eu:9090/status
+curl -H "Authorization: Bearer <token>" http://localhost:9090/status
 ```
 
 ## Files of interest

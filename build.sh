@@ -3,7 +3,7 @@
 # First build: ~4 min (deps) + ~2 min (compile).  Subsequent: ~30s.
 set -e
 
-IMAGE="ghcr.io/openwatt-energy/conduit:latest"
+IMAGE="${IMAGE:-conduitd:latest}"
 
 echo "Pulling previous image for layer cache..."
 docker pull "$IMAGE" 2>/dev/null || echo "(no previous image, full build)"

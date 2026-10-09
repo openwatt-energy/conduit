@@ -17,7 +17,7 @@ version: "3.8"
 services:
   # ── Production instance ──────────────────────────────────────────
   conduit:
-    image: ghcr.io/openwatt-energy/conduit:latest
+    image: ghcr.io/openwatt/conduit:latest
     restart: unless-stopped
     logging:
       driver: "json-file"
@@ -34,7 +34,7 @@ services:
       CONDUIT_PLAIN_ADDR: 0.0.0.0:1883
       CONDUIT_TLS_ADDR: 0.0.0.0:8883
       CONDUIT_API_ADDR: 0.0.0.0:9090
-      CONDUIT_INFLUX_URL: https://REDACTED_IP:8086
+      CONDUIT_INFLUX_URL: ${CONDUIT_INFLUX_URL}
       CONDUIT_INFLUX_ORG: OpenWatt
       CONDUIT_INFLUX_BUCKET: openwatt
       CONDUIT_INFLUX_TOKEN: ${CONDUIT_INFLUX_TOKEN}
@@ -46,7 +46,7 @@ services:
 
   # ── Test instance ────────────────────────────────────────────────
   conduit-test:
-    image: ghcr.io/openwatt-energy/conduit:latest
+    image: ghcr.io/openwatt/conduit:latest
     restart: unless-stopped
     profiles:
       - test
@@ -65,7 +65,7 @@ services:
       CONDUIT_PLAIN_ADDR: 0.0.0.0:1883
       CONDUIT_TLS_ADDR: 0.0.0.0:8883
       CONDUIT_API_ADDR: 0.0.0.0:9090
-      CONDUIT_INFLUX_URL: https://REDACTED_IP:8086
+      CONDUIT_INFLUX_URL: ${CONDUIT_INFLUX_URL}
       CONDUIT_INFLUX_ORG: OpenWatt
       CONDUIT_INFLUX_BUCKET: openwatt_test
       CONDUIT_INFLUX_TOKEN: ${CONDUIT_INFLUX_TOKEN}
