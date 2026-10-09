@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.svg" alt="Conduit logo" width="120" height="120">
+</p>
+
 # conduit — OpenWatt MQTT broker
 
 Rust MQTT broker replacing Mosquitto for the OpenWatt EMS. Authenticates
