@@ -129,3 +129,13 @@ Key env vars (see `.env.example` for the full list):
 ---
 
 MIT License &middot; Built in Rust
+
+---
+
+<p align="center">
+  <a href="https://openwatt.be">
+    <img src="openwatt-logo.svg" alt="OpenWatt" width="300">
+  </a>
+</p>
+
+<p align="center"><sub>Brought to you by <a href="https://openwatt.be">OpenWatt srl</a></sub></p>
