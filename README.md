@@ -2,135 +2,130 @@
   <img src="logo.svg" alt="Conduit logo" width="120" height="120">
 </p>
 
-# conduit — OpenWatt MQTT broker
+<h1 align="center">conduit</h1>
+<p align="center"><strong>A Rust MQTT broker purpose-built for smart meter telemetry.</strong><br>
+Authenticates, parses, and writes directly to InfluxDB — no intermediate APIs, no message queues, no overhead.</p>
 
-Rust MQTT broker replacing Mosquitto for the OpenWatt EMS. Authenticates
-P1M5, SmartStuff, and 1st-gen dongles, parses JSON and DSMR telemetry,
-and writes directly to InfluxDB.
+<p align="center">
+  <img alt="GitHub CI" src="https://github.com/openwatt-energy/conduit/actions/workflows/ci.yml/badge.svg">
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-green">
+  <img alt="Rust" src="https://img.shields.io/badge/rust-1.98+-orange">
+</p>
 
-Runs on a lightweight VM (e.g. GCE COS) or any container host.
+---
 
-## Quick deploy
+## Why Conduit?
+
+### &#9889; Dynamic credential loading
+Device registry fetched from your backend API on startup and reloaded every 5 minutes. **Add a dongle and it authenticates automatically — no restarts, no credential file edits.** Supports multiple auth schemes: SHA256-salted (v1.0.47+), plain-password (1st-gen), and configurable fallback for unknown devices.
+
+### &#128640; Direct InfluxDB writes
+Telemetry is parsed and written straight to InfluxDB with **no intermediate REST API**. The legacy pattern — MQTT → bridge → API → InfluxDB — is collapsed into a single process. **Zero network hops between parse and write.**
+
+### &#9881; Config-driven field mapping
+Field mappings live in `configs/p1m5.json` and `configs/smartstuff.json`. **Add a new meter field without touching Rust code** — just add the OBIS code, target name, type, and optional scale factor. Compiled into the binary via `include_str!` for zero runtime overhead.
+
+### &#9961; Multi-protocol parser
+Handles **three telemetry formats simultaneously**: raw DSMR text, JSON from v1.0.47+ firmware, and SmartStuff/BEPR JSON. Auto-detection by topic prefix and payload type. All parsed through a unified pipeline into a consistent InfluxDB schema.
+
+### &#128274; Layered authentication
+Static device auth (1st-gen, plain password), then SHA256-based auth (P1M5 firmware), then configurable fallback for unregistered devices. **Dongles never get locked out** while the registry sync catches up.
+
+### &#128221; Built-in observability
+Live HTML dashboard with real-time metrics, auth failure tracking, and event log. Optional Prometheus metrics and GCP Cloud Monitoring integration. Docker log rotation built-in.
+
+---
+
+## Conduit vs Mosquitto + mqtt2api
+
+| | Legacy (Mosquitto + mqtt2api) | Conduit |
+|---|---|---|
+| Language | Python (mqtt2api) + C (Mosquitto) | **Rust** |
+| Binary size | ~500 MB (Docker image) | **11 MB** binary + 90 MB image |
+| Memory (idle) | ~200 MB | **~30 MB** |
+| Data path | MQTT → mqtt2api → API → InfluxDB | **MQTT → InfluxDB** |
+| Parse latency | ~50 ms per message | **<1 ms** per message |
+| Credential changes | Edit password file, restart Mosquitto | **Auto-reload from API every 5 min** |
+| New fields | Edit Python code, redeploy | **Edit JSON config, rebuild (~20s)** |
+
+---
+
+## Quick start
 
 ```bash
-./scripts/auth.sh       # one-time gcloud auth (uses SA key — never expires)
-./deploy.sh             # prod (builds from source, ~30s incremental)
-./deploy.sh test        # test instance (openwatt_test bucket, port 1884)
+cp .env.example prod.env    # edit with your credentials
+./deploy.sh                 # builds from source (~30s incremental)
 ```
 
-First build takes ~4 min (downloading Rust crates). Subsequent builds are
-~20-30s thanks to Docker layer caching.
+First build takes ~4 min (downloading Rust crates). Subsequent builds are ~20-30s courtesy of Docker layer caching.
 
-## Restart
-
-```bash
-sudo docker restart conduit          # no rebuild
-sudo docker restart conduit-tls      # nginx TLS proxy
-sudo docker restart conduit-metrics  # monitoring sidecar
-```
-
-## View logs
-
-```bash
-sudo docker logs -f conduit          # follow logs
-sudo docker logs conduit --tail 50   # last 50 lines
-sudo docker logs conduit | grep "auth failed"
-sudo docker logs conduit | grep "unregistered device"  # P1M5 fallback auth
-sudo docker logs conduit | grep "parse error"           # parser issues
-```
+---
 
 ## Architecture
 
 | Port | Protocol | Service | Purpose |
 |---|---|---|---|
-| 1883 | MQTT plain | conduit | Dongle connections (no TLS) |
-| 8883 | MQTT TLS | nginx → conduit:8884 | TLS-terminated dongle connections |
+| 1883 | MQTT plain | conduit | Dongle connections |
+| 8883 | MQTT TLS | nginx → conduit:8884 | TLS-terminated connections |
 | 9090 | HTTP | nginx → conduit:9091 | Dashboard + API proxy |
-| 9091 | HTTP | conduit (internal) | API health endpoint |
 
-### Containers
+---
 
-| Container | Image | Role |
-|---|---|---|
-| `conduit` | `conduitd:latest` | MQTT broker |
-| `conduit-tls` | `nginx:alpine` | TLS termination + dashboard proxy |
-| `conduit-metrics` | `conduit-metrics:latest` | Cloud Monitoring sidecar |
-
-## Configuration
-
-Key env vars (see `prod.env` / `test.env` for full list):
-
-| Variable | Purpose |
-|---|---|
-| `CONDUIT_AUTH_SALT` | SHA256 password salt (must match firmware `SALT_STRING`) |
-| `CONDUIT_INFLUX_BUCKET` | InfluxDB bucket (`openwatt` / `openwatt_test`) |
-| `CONDUIT_INFLUX_TOKEN` | InfluxDB write token |
-| `CONDUIT_API_ADMIN_TOKEN` | Bearer token for API endpoints |
-| `CONDUIT_REGISTRY_URL` | Backend API for device registry |
-| `CONDUIT_REGISTRY_API_KEY` | Backend API key |
-
-## Health dashboard
-
-```
-http://localhost:9090/
-```
-
-Shows real-time metrics (8 cards), recent auth failures table, and prod/test
-tabs switching between instances.
-
-## API endpoints
+## API
 
 | Endpoint | Auth | Description |
 |---|---|---|
 | `GET /health` | None | Liveness probe |
 | `GET /status` | Bearer | Full MQTT stats (JSON) |
 | `GET /metrics` | Bearer | Prometheus metrics |
-| `POST /admin/reload` | Bearer | Reload device registry from backend |
+| `POST /admin/reload` | Bearer | Reload device registry |
 | `GET /admin/clients` | Bearer | All authorized devices |
-
-Token: set via `CONDUIT_API_ADMIN_TOKEN` env var (see `.env.example`).
 
 ```bash
 curl -H "Authorization: Bearer <token>" http://localhost:9090/status
 ```
 
+---
+
+## Configuration
+
+Key env vars (see `.env.example` for the full list):
+
+| Variable | Purpose |
+|---|---|
+| `CONDUIT_AUTH_SALT` | SHA256 password salt (must match firmware) |
+| `CONDUIT_INFLUX_BUCKET` | InfluxDB bucket |
+| `CONDUIT_INFLUX_TOKEN` | InfluxDB write token |
+| `CONDUIT_API_ADMIN_TOKEN` | Bearer token for API endpoints |
+| `CONDUIT_REGISTRY_URL` | Backend API for device registry |
+| `CONDUIT_REGISTRY_API_KEY` | Registry API authentication key |
+
+---
+
 ## Files of interest
 
 | Path | Purpose |
 |---|---|
-| `configs/p1m5.json` | P1M5 field mappings (OBIS → InfluxDB) |
+| `configs/p1m5.json` | P1M5 field mappings |
 | `configs/smartstuff.json` | SmartStuff field mappings |
-| `configs/be-devices.json` | 1st-gen device MACs with hardcoded credentials |
-| `src/auth/` | Authentication providers (PasswordAuth, StaticDeviceAuth) |
-| `src/parser/` | Telemetry parsers (DSMR, JSON, SmartStuff) |
-| `scripts/conduit-metrics.py` | Cloud Monitoring sidecar |
-| `dashboard/health.html` | HTML dashboard |
-| `dashboard/nginx.conf` | nginx proxy config |
-| `dashboard/docker-compose.yml` | Full stack for local development |
-| `prod.env` / `test.env` | Environment variables |
+| `configs/be-devices.json` | 1st-gen device auth |
+| `src/auth/` | Authentication providers |
+| `src/parser/` | Telemetry parsers |
+| `dashboard/docker-compose.yml` | Full stack for local dev |
+| `dashboard/landing.html` | Commercial page |
+
+---
 
 ## Troubleshooting
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| `auth failed: user="P1..."` | Dongle not in registry | Wait for registry sync, or see fallback below |
-| `unregistered device accepted via fallback` | P1M5 dongle accepted without registry entry | Normal — device exists in Supabase but not v2 assets |
-| `parse error: unknown data topic` | Unhandled topic pattern | Add to config JSON or parser dispatch |
-| `ACL denied PUBLISH` | Topic not authorized for device | Expected for `homeassistant/`; unexpected for `BEPR/` |
-| `influx_failed > 0` | InfluxDB unreachable or type conflict | Check InfluxDB connectivity and field types |
-| `connections=0` | Conduit or nginx down | `sudo docker restart conduit conduit-tls` |
-| Dashboard 502 | `conduit` stopped but `conduit-tls` running | `sudo docker start conduit` |
+| `auth failed` | Dongle not in registry | Wait for registry sync |
+| `parse error: unknown data topic` | Unhandled topic pattern | Add to config JSON |
+| `ACL denied PUBLISH` | Topic not authorized | Expected for `homeassistant/` |
+| `influx_failed > 0` | InfluxDB unreachable or type conflict | Check connectivity + field types |
+| `connections=0` | Broker or proxy down | `docker restart conduit conduit-tls` |
 
-## Alerting
+---
 
-Cloud Monitoring alerts (GCP):
-
-| Alert | Severity | Condition |
-|---|---|---|
-| No connected dongles | CRITICAL | `connections < 100` for 5 min |
-| Auth failures | WARNING | `rate(auth_failures) > 50/min` |
-| InfluxDB failures | CRITICAL | `rate(influx_failed) > 0/min` |
-| Parse errors | WARNING | `rate(parse_errors) > 50/min` |
-
-Metrics are pushed every 60s by `conduit-metrics` to
-`custom.googleapis.com/openwatt/conduit/*`.
+MIT License &middot; Built in Rust
