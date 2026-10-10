@@ -31,6 +31,8 @@ async fn mqtt_connect(
         .map_err(|e| format!("connect: {e}"))?;
 
     let connect = Packet::Connect(Connect {
+        protocol_name: Some("MQTT".into()),
+        protocol_level: 4,
         client_id: client_id.to_string(),
         clean_session: true,
         keep_alive: 30,
@@ -246,6 +248,8 @@ async fn run_auth_negative() -> Result<(), Box<dyn std::error::Error>> {
     println!("2. missing username...");
     let mut stream = TcpStream::connect(&addr).await?;
     let connect = Packet::Connect(Connect {
+        protocol_name: Some("MQTT".into()),
+        protocol_level: 4,
         client_id: "no_user".into(),
         clean_session: true,
         keep_alive: 30,

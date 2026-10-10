@@ -94,7 +94,6 @@ mod tests {
             username: Some("3030F9FD9234".into()),
             password: Some(b"0p3nW404tt".to_vec()),
             will: None,
-            will: None,
         };
         let result = auth.authenticate(&connect).await;
         assert!(result.is_ok());
@@ -113,7 +112,6 @@ mod tests {
             username: Some("34B7DA9882EF".into()),
             password: Some(b"wrong".to_vec()),
             will: None,
-            will: None,
         };
         assert!(auth.authenticate(&connect).await.is_err());
     }
@@ -129,7 +127,6 @@ mod tests {
             client_id: "UNKNOWN".into(),
             username: Some("UNKNOWN".into()),
             password: Some(b"x".to_vec()),
-            will: None,
             will: None,
         };
         assert!(auth.authenticate(&connect).await.is_err());

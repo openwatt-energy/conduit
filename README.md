@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="logo.svg" alt="Conduit logo" width="120" height="120">
+  <img src="logo.svg" alt="Conduit logo" width="100">
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://openwatt.be">
+    <img src="openwatt-logo.svg" alt="OpenWatt" width="240">
+  </a>
 </p>
 
 <h1 align="center">conduit</h1>
@@ -128,14 +132,4 @@ Key env vars (see `.env.example` for the full list):
 
 ---
 
-MIT License &middot; Built in Rust
-
----
-
-<p align="center">
-  <a href="https://openwatt.be">
-    <img src="openwatt-logo.svg" alt="OpenWatt" width="300">
-  </a>
-</p>
-
-<p align="center"><sub>Brought to you by <a href="https://openwatt.be">OpenWatt srl</a></sub></p>
+MIT License &middot; Built by <a href="https://openwatt.be">OpenWatt srl</a>

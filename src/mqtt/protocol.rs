@@ -17,6 +17,8 @@ pub enum Packet {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Connect {
+    pub protocol_name: Option<String>,
+    pub protocol_level: u8,
     pub client_id: String,
     pub clean_session: bool,
     pub keep_alive: u16,
@@ -360,6 +362,8 @@ fn decode_connect(src: &mut Bytes, _flags: u8) -> Result<Connect, DecodeError> {
     };
 
     Ok(Connect {
+        protocol_name: Some(proto_name),
+        protocol_level: proto_level,
         client_id,
         clean_session,
         keep_alive,
@@ -570,6 +574,8 @@ mod tests {
     #[test]
     fn test_connect_roundtrip() {
         roundtrip(Packet::Connect(Connect {
+            protocol_name: Some("MQTT".into()),
+            protocol_level: 4,
             client_id: "P1ABC123".into(),
             clean_session: true,
             keep_alive: 60,
@@ -582,6 +588,8 @@ mod tests {
     #[test]
     fn test_connect_minimal() {
         roundtrip(Packet::Connect(Connect {
+            protocol_name: Some("MQTT".into()),
+            protocol_level: 4,
             client_id: "test".into(),
             clean_session: false,
             keep_alive: 30,
