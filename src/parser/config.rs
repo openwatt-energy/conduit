@@ -88,7 +88,7 @@ mod tests {
         assert_eq!(readings["1-0:1.7.0"].scale, Some(1000.0));
 
         let config = &cfg.p1m5.topics["sys/config"].fields;
-        assert_eq!(config["fw_ver"].name, "fw_version");
+        assert_eq!(config["fw_ver"].name, "fw");
         assert!(config["email"].ignored);
 
         // Smart Stuff

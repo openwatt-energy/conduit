@@ -116,15 +116,15 @@ mod tests {
             .collect();
 
         // power_delivered 0.500 kW → 500 W via scale
-        assert_eq!(*fields.get("w_delivered").unwrap(), FieldValue::Float(500.0));
-        assert_eq!(*fields.get("w_returned").unwrap(), FieldValue::Float(100.0));
-        assert_eq!(*fields.get("v_l1").unwrap(), FieldValue::Float(230.0));
+        assert_eq!(**fields.get("w_delivered").unwrap(), FieldValue::Float(500.0));
+        assert_eq!(**fields.get("w_returned").unwrap(), FieldValue::Float(100.0));
+        assert_eq!(**fields.get("v_l1").unwrap(), FieldValue::Float(230.0));
         assert_eq!(
-            *fields.get("kwh_delivered_t1").unwrap(),
+            **fields.get("kwh_delivered_t1").unwrap(),
             FieldValue::Float(1234.567)
         );
-        assert_eq!(*fields.get("temp").unwrap(), FieldValue::Float(22.5));
-        assert_eq!(*fields.get("gas_m3").unwrap(), FieldValue::Float(7424.809));
+        assert_eq!(**fields.get("temp").unwrap(), FieldValue::Float(22.5));
+        assert_eq!(**fields.get("gas_m3").unwrap(), FieldValue::Float(7424.809));
     }
 
     #[test]

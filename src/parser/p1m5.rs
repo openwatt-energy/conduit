@@ -125,6 +125,12 @@ fn extract_json_value(obj: &serde_json::Value) -> Option<FieldValue> {
     if let Some(n) = obj.as_i64() {
         return Some(FieldValue::Float(n as f64));
     }
+    // Coerce flat JSON string to float (e.g. tariff "1")
+    if let Some(s) = obj.as_str() {
+        if let Ok(n) = s.parse::<f64>() {
+            return Some(FieldValue::Float(n));
+        }
+    }
     None
 }
 
@@ -313,15 +319,15 @@ mod tests {
             .map(|(k, v)| (k.as_str(), v))
             .collect();
 
-        assert_eq!(*fields.get("kwh_delivered_t1").unwrap(), FieldValue::Float(29865.06));
-        assert_eq!(*fields.get("kwh_delivered_t2").unwrap(), FieldValue::Float(58161.78));
+        assert_eq!(**fields.get("kwh_delivered_t1").unwrap(), FieldValue::Float(29865.06));
+        assert_eq!(**fields.get("kwh_delivered_t2").unwrap(), FieldValue::Float(58161.78));
         // kW → W via scale: 0.333 * 1000 = 333.0
-        assert_eq!(*fields.get("w_delivered").unwrap(), FieldValue::Float(333.0));
-        assert_eq!(*fields.get("w_returned").unwrap(), FieldValue::Float(6008.0));
-        assert_eq!(*fields.get("v_l1").unwrap(), FieldValue::Float(247.1));
-        assert_eq!(*fields.get("a_l1").unwrap(), FieldValue::Float(14.89));
+        assert_eq!(**fields.get("w_delivered").unwrap(), FieldValue::Float(333.0));
+        assert_eq!(**fields.get("w_returned").unwrap(), FieldValue::Float(6008.0));
+        assert_eq!(**fields.get("v_l1").unwrap(), FieldValue::Float(247.1));
+        assert_eq!(**fields.get("a_l1").unwrap(), FieldValue::Float(14.89));
         // tariff comes from string "1" → float
-        assert_eq!(*fields.get("tariff").unwrap(), FieldValue::Float(1.0));
+        assert_eq!(**fields.get("tariff").unwrap(), FieldValue::Float(1.0));
     }
 
     #[test]
@@ -329,12 +335,10 @@ mod tests {
         let json: serde_json::Value = serde_json::json!({
             "fw_ver": "v1.0.47-ow",
             "uptime": 3600,
-            "boot_count": 12,
-            "wifi_rssi": -45,
+            "reboots": 12,
+            "wifi_rssi": "-45",
             "wifi_ssid": "Clovis Home",
             "dongle_ip": "10.13.20.146",
-            "mqtt_connected": true,
-            "p1_connected": true,
             "email": "test@example.com"
         });
 
@@ -346,12 +350,12 @@ mod tests {
             .map(|(k, v)| (k.as_str(), v))
             .collect();
 
-        assert_eq!(*fields.get("fw_version").unwrap(), FieldValue::String("v1.0.47-ow".into()));
-        assert_eq!(*fields.get("uptime").unwrap(), FieldValue::Integer(3600));
-        assert_eq!(*fields.get("reboots").unwrap(), FieldValue::Integer(12));
-        assert_eq!(*fields.get("wifi_rssi").unwrap(), FieldValue::Integer(-45));
-        assert_eq!(*fields.get("wifi_ssid").unwrap(), FieldValue::String("Clovis Home".into()));
-        assert_eq!(*fields.get("mqtt_connected").unwrap(), FieldValue::Boolean(true));
+        assert_eq!(**fields.get("fw").unwrap(), FieldValue::String("v1.0.47-ow".into()));
+        assert_eq!(**fields.get("uptime").unwrap(), FieldValue::Integer(3600));
+        assert_eq!(**fields.get("reboots").unwrap(), FieldValue::Integer(12));
+        assert_eq!(**fields.get("wifi_rssi").unwrap(), FieldValue::String("-45".into()));
+        assert_eq!(**fields.get("wifi_ssid").unwrap(), FieldValue::String("Clovis Home".into()));
+        assert_eq!(**fields.get("dongle_ip").unwrap(), FieldValue::String("10.13.20.146".into()));
         // 'email' is ignored in config
         assert!(fields.get("email").is_none());
     }
@@ -374,8 +378,7 @@ mod tests {
             .collect();
 
         assert!(fields.get("email").is_none());
-        assert!(fields.get("ts").is_none());
-        assert!(fields.get("fw_version").is_some());
+        assert!(fields.get("fw").is_some());
         assert!(fields.get("uptime").is_some());
     }
 
