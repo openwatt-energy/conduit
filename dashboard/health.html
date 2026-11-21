@@ -40,6 +40,14 @@ body{padding:1.25rem;max-width:1120px;margin:0 auto}
 .status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
 .status-dot.online{background:var(--green);box-shadow:0 0 6px var(--green)}
 .status-dot.offline{background:var(--red)}
+.firmware-panel{margin-top:.75rem;display:grid;grid-template-columns:1fr 1fr;gap:.625rem}
+.fw-group{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:.6rem}
+.fw-group .fw-title{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:500;margin-bottom:.4rem}
+.fw-row{display:flex;align-items:center;gap:.5rem;padding:.12rem 0;font-size:.7rem}
+.fw-row .fw-label{flex:0 0 auto;min-width:70px;color:var(--fg);font-family:ui-monospace,monospace}
+.fw-bar{flex:1;height:6px;background:hsl(240 3.7% 12%);border-radius:3px;overflow:hidden}
+.fw-bar .fw-fill{height:100%;background:var(--primary);border-radius:3px}
+.fw-row .fw-count{flex:0 0 auto;min-width:32px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -86,6 +94,7 @@ body{padding:1.25rem;max-width:1120px;margin:0 auto}
 <div id="panel-prod">
   <div class="panel-title">Production — openwatt bucket</div>
   <div class="grid" id="grid-prod"></div>
+  <div class="firmware-panel" id="firmware-prod"></div>
   <div class="failures hidden" id="failures-prod">
     <div class="label" style="margin-bottom:.4rem">Recent Auth Failures</div>
     <table id="failures-table-prod"></table>
@@ -171,6 +180,39 @@ function poll(inst,url){
 
 setInterval(function(){poll("prod","/status");},3000);
 poll("prod","/status");
+setInterval(pollFirmware,10000);
+pollFirmware();
+
+function pollFirmware(){
+  var x=new XMLHttpRequest();
+  x.open("GET","/admin/firmware",true);
+  x.setRequestHeader("Authorization","Bearer "+TOKEN);
+  x.timeout=10000;
+  x.onload=function(){
+    if(x.status!==200)return;
+    var d;try{d=JSON.parse(x.responseText);}catch(e){return}
+    var el=document.getElementById("firmware-prod");
+    if(!el)return;
+    var fw=(d.firmwares||[]),ven=(d.vendors||[]);
+    var totalFw=fw.reduce(function(a,b){return a+b.count;},0);
+    var totalVen=ven.reduce(function(a,b){return a+b.count;},0);
+    var html='<div class="fw-group"><div class="fw-title">Firmware Versions</div>';
+    fw.slice(0,8).forEach(function(f){
+      var pct=totalFw?Math.round(f.count/totalFw*100):0;
+      html+='<div class="fw-row"><span class="fw-label">'+f.version+'</span><span class="fw-bar"><span class="fw-fill" style="width:'+pct+'%"></span></span><span class="fw-count">'+f.count+'</span></div>';
+    });
+    html+='</div><div class="fw-group"><div class="fw-title">Vendors</div>';
+    ven.forEach(function(v){
+      var pct=totalVen?Math.round(v.count/totalVen*100):0;
+      var color=v.vendor==='openwatt'?'var(--primary)':'var(--blue)';
+      html+='<div class="fw-row"><span class="fw-label">'+v.vendor+'</span><span class="fw-bar"><span class="fw-fill" style="width:'+pct+'%;background:'+color+'"></span></span><span class="fw-count">'+v.count+'</span></div>';
+    });
+    html+='</div>';
+    el.innerHTML=html;
+  };
+  x.onerror=function(){};
+  x.send();
+}
 
 function switchTab(tab){
   var tabs=document.querySelectorAll(".tab");

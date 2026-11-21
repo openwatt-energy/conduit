@@ -34,6 +34,7 @@ pub fn router(state: AppState) -> axum::Router {
         .route("/metrics", get(metrics))
         .route("/admin/reload", post(admin_reload))
         .route("/admin/clients", get(admin_clients))
+        .route("/admin/firmware", get(admin_firmware))
         .route("/command/{device_id}", post(command_send))
         .layer(middleware::from_fn_with_state(
             state.admin_token.clone(),
@@ -274,6 +275,14 @@ async fn admin_clients(State(state): State<AppState>) -> Json<serde_json::Value>
     Json(serde_json::json!({
         "count": entries.len(),
         "clients": entries,
+    }))
+}
+
+async fn admin_firmware(State(state): State<AppState>) -> Json<serde_json::Value> {
+    let (firmwares, vendors) = state.stats.firmware_summary();
+    Json(serde_json::json!({
+        "firmwares": firmwares.into_iter().map(|(v, c)| serde_json::json!({"version": v, "count": c})).collect::<Vec<_>>(),
+        "vendors": vendors.into_iter().map(|(v, c)| serde_json::json!({"vendor": v, "count": c})).collect::<Vec<_>>(),
     }))
 }
 

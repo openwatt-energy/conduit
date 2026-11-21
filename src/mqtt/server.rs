@@ -1,6 +1,6 @@
 use crate::config::LimitsConfig;
 use crate::mqtt::protocol::*;
-use crate::parser::{ParsedReading, TelemetryPacket};
+use crate::parser::{FieldValue, ParsedReading, TelemetryPacket};
 use bytes::BytesMut;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -29,6 +29,8 @@ pub struct ServerStats {
     /// Global dedup of ACL denials, keyed by `device|topic` with last-seen
     /// timestamp. Prevents reconnection from re-spamming the same denial.
     pub denied_seen: Arc<Mutex<HashMap<String, std::time::Instant>>>,
+    /// Connected-device metadata, keyed by client_id: (fw_version, customer).
+    pub firmware: Arc<Mutex<HashMap<String, (String, String)>>>,
 }
 
 const MAX_RECENT_FAILURES: usize = 50;
@@ -44,7 +46,31 @@ impl ServerStats {
             parse_errors: Arc::new(std::sync::atomic::AtomicUsize::new(0)),
             recent_auth_failures: Arc::new(Mutex::new(Vec::new())),
             denied_seen: Arc::new(Mutex::new(HashMap::new())),
+            firmware: Arc::new(Mutex::new(HashMap::new())),
         }
+    }
+
+    /// Record a device's firmware version + customer from a sys/config message.
+    pub fn record_firmware(&self, client_id: &str, fw_version: &str, customer: &str) {
+        let mut map = self.firmware.lock().unwrap();
+        map.insert(client_id.to_string(), (fw_version.to_string(), customer.to_string()));
+    }
+
+    /// Summarise firmware + vendor distribution over currently-known devices.
+    pub fn firmware_summary(&self) -> (Vec<(String, usize)>, Vec<(String, usize)>) {
+        let map = self.firmware.lock().unwrap();
+        let mut fw: HashMap<String, usize> = HashMap::new();
+        let mut vendors: HashMap<String, usize> = HashMap::new();
+        for (fw_ver, customer) in map.values() {
+            *fw.entry(fw_ver.clone()).or_insert(0) += 1;
+            let vendor = if customer.is_empty() { "unknown" } else { customer };
+            *vendors.entry(vendor.to_string()).or_insert(0) += 1;
+        }
+        let mut fw_vec: Vec<(String, usize)> = fw.into_iter().collect();
+        let mut vendor_vec: Vec<(String, usize)> = vendors.into_iter().collect();
+        fw_vec.sort_by(|a, b| b.1.cmp(&a.1));
+        vendor_vec.sort_by(|a, b| b.1.cmp(&a.1));
+        (fw_vec, vendor_vec)
     }
 
     pub fn record_auth_failure(&self, username: &str, client_id: &str, ip: &str) {
@@ -223,6 +249,21 @@ async fn handle_connection(
                     let topic = publish.topic.clone();
                     match crate::parser::parse_telemetry(&TelemetryPacket { ow_id, topic: publish.topic, payload: publish.payload }) {
                         Ok(reading) => {
+                            // Track firmware + customer from sys/config messages.
+                            if topic.contains("/sys/") {
+                                let mut fw = String::new();
+                                let mut customer = String::new();
+                                for (name, value) in &reading.fields {
+                                    match (name.as_str(), value) {
+                                        ("fw", FieldValue::String(v)) => fw = v.clone(),
+                                        ("customer", FieldValue::String(v)) => customer = v.clone(),
+                                        _ => {}
+                                    }
+                                }
+                                if !fw.is_empty() {
+                                    stats.record_firmware(&device_id, &fw, &customer);
+                                }
+                            }
                             if influx_tx.send(reading).await.is_err() {
                                 warn!("influx channel closed");
                                 break;
